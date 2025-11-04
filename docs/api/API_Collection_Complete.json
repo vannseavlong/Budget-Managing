@@ -1,0 +1,1212 @@
+{
+  "info": {
+    "name": "Budget Manager API Collection",
+    "_postman_id": "budget-manager-api-collection",
+    "description": "Complete Postman collection for Budget Manager with Google Sheets integration. Set up environment variables: {{baseUrl}} = http://localhost:3001 and {{token}} = your-jwt-token",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "description": "OAuth flow and user authentication",
+      "item": [
+        {
+          "name": "1. Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. Initiate Google OAuth",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/google",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "google"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Copy the authUrl from response and visit it in browser",
+                  "const response = pm.response.json();",
+                  "console.log('Visit this URL to authorize: ' + response.authUrl);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4. Validate Database",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/validate-database",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "validate-database"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5. Setup Database Schema (REQUIRED)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sheets/setup-schema",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "sheets", "setup-schema"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6. Validate Schema Setup",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sheets/validate-schema",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "sheets", "validate-schema"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7. Recreate Database (New Schema)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/recreate-database",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "recreate-database"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "8. Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"your-refresh-token-here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "refresh"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "9. Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📂 Categories",
+      "description": "Manage budget categories",
+      "item": [
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Groceries\",\n  \"color\": \"#f97316\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Food & Groceries\",\n  \"color\": \"#22c55e\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/:categoryId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories", ":categoryId"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/:categoryId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories", ":categoryId"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "💰 Transactions",
+      "description": "Manage income and expenses",
+      "item": [
+        {
+          "name": "Get All Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions?page=1&per_page=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transactions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "50"
+                },
+                {
+                  "key": "category_id",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "date_from",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "date_to",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Weekly groceries\",\n  \"amount\": -85.50,\n  \"category_id\": \"category-id-here\",\n  \"category_name\": \"Groceries\",\n  \"date\": \"2025-11-05\",\n  \"time\": \"14:30\",\n  \"notes\": \"Supermarket shopping\",\n  \"receipt_url\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transactions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Transaction",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Weekly groceries (updated)\",\n  \"amount\": -95.50,\n  \"notes\": \"Supermarket shopping + household items\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions/:transactionId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transactions", ":transactionId"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transaction History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions/:transactionId/history",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transactions", ":transactionId", "history"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Transaction",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions/:transactionId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transactions", ":transactionId"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📊 Budgets",
+      "description": "Manage monthly budgets and budget items",
+      "item": [
+        {
+          "name": "Get All Budgets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/budgets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "budgets"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Budget",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"year\": 2025,\n  \"month\": 11,\n  \"income\": 5000.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/budgets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "budgets"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Budget",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"income\": 5500.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/budgets/:budgetId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "budgets", ":budgetId"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Monthly Budget",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/budgets/monthly?year=2025&month=11",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "budgets", "monthly"],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2025"
+                },
+                {
+                  "key": "month",
+                  "value": "11"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Budget Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"budget_id\": \"budget-id-here\",\n  \"category_id\": \"category-id-here\",\n  \"category_name\": \"Groceries\",\n  \"amount\": 400.00,\n  \"spent\": 0.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/budgets/items",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "budgets", "items"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Budget Item",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 450.00,\n  \"spent\": 125.50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/budgets/items/:itemId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "budgets", "items", ":itemId"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Budget",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/budgets/:budgetId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "budgets", ":budgetId"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Budget Item",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/budgets/items/:itemId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "budgets", "items", ":itemId"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🎯 Goals",
+      "description": "Manage financial goals",
+      "item": [
+        {
+          "name": "Get All Goals",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/goals",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "goals"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Goal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Emergency Fund\",\n  \"limit_amount\": 10000.00,\n  \"period\": \"monthly\",\n  \"notify_telegram\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/goals",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "goals"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Goal",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"limit_amount\": 15000.00,\n  \"notify_telegram\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/goals/:goalId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "goals", ":goalId"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Goal Progress",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/goals/:goalId/progress",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "goals", ":goalId", "progress"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Goal",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/goals/:goalId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "goals", ":goalId"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "⚙️ Settings",
+      "description": "User settings and preferences",
+      "item": [
+        {
+          "name": "Get Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "settings"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currency\": \"EUR\",\n  \"language\": \"en\",\n  \"dark_mode\": true,\n  \"telegram_notifications\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "settings"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Setup Telegram Integration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telegram_chat_id\": \"123456789\",\n  \"bot_token\": \"your-bot-token\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/settings/telegram/setup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "settings", "telegram", "setup"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🤖 Telegram",
+      "description": "Telegram bot integration",
+      "item": [
+        {
+          "name": "Get Message History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/telegram/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "telegram", "messages"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Telegram Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chat_id\": \"123456789\",\n  \"message\": \"Your budget update: You've spent $125.50 on groceries this month.\",\n  \"parse_mode\": \"Markdown\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/telegram/send",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "telegram", "send"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Setup Notifications",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chat_id\": \"123456789\",\n  \"notifications\": {\n    \"daily_summary\": true,\n    \"budget_alerts\": true,\n    \"goal_updates\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/telegram/notifications/setup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "telegram", "notifications", "setup"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Telegram Webhook (For Bot)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"update_id\": 123456,\n  \"message\": {\n    \"message_id\": 1,\n    \"from\": {\n      \"id\": 123456789,\n      \"is_bot\": false,\n      \"first_name\": \"User\",\n      \"username\": \"username\"\n    },\n    \"chat\": {\n      \"id\": 123456789,\n      \"first_name\": \"User\",\n      \"username\": \"username\",\n      \"type\": \"private\"\n    },\n    \"date\": 1699123456,\n    \"text\": \"/balance\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/telegram/webhook",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "telegram", "webhook"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Connection",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/telegram/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "telegram", "test"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📊 Google Sheets",
+      "description": "Google Sheets integration and management",
+      "item": [
+        {
+          "name": "Get Spreadsheet Info",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sheets/info",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "sheets", "info"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Database",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Budget Manager Database\",\n  \"template\": \"budget\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sheets/create-database",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "sheets", "create-database"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Share Spreadsheet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"partner@example.com\",\n  \"role\": \"reader\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sheets/share",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "sheets", "share"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sheets/export?format=csv&table=transactions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "sheets", "export"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "csv"
+                },
+                {
+                  "key": "table",
+                  "value": "transactions"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Import Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"table\": \"transactions\",\n  \"data\": [\n    {\n      \"name\": \"Coffee\",\n      \"amount\": -4.50,\n      \"category_name\": \"Food\",\n      \"date\": \"2025-11-05\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sheets/import",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "sheets", "import"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sync with Sheets",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sheets/sync",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "sheets", "sync"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Backup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sheets/backup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "sheets", "backup"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📈 Data Analytics",
+      "description": "Analytics and dashboard data",
+      "item": [
+        {
+          "name": "Get Dashboard Data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/data/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "data", "dashboard"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Categories Data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/data/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "data", "categories"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transaction Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/data/transactions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "data", "transactions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Category (Bulk)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categories\": [\n    {\n      \"name\": \"Groceries\",\n      \"color\": \"#f97316\"\n    },\n    {\n      \"name\": \"Transportation\",\n      \"color\": \"#3b82f6\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/data/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "data", "categories"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Transaction (Bulk)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactions\": [\n    {\n      \"name\": \"Salary\",\n      \"amount\": 5000.00,\n      \"category_name\": \"Income\",\n      \"date\": \"2025-11-01\"\n    },\n    {\n      \"name\": \"Groceries\",\n      \"amount\": -85.50,\n      \"category_name\": \"Food\",\n      \"date\": \"2025-11-02\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/data/transactions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "data", "transactions"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Auto-populate baseUrl if not set",
+          "if (!pm.environment.get('baseUrl')) {",
+          "    pm.environment.set('baseUrl', 'http://localhost:3001');",
+          "}"
+        ]
+      }
+    }
+  ]
+}
