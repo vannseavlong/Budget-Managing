@@ -32,7 +32,9 @@ export async function getTransactions(
 
     // Sort by date (newest first)
     transactions.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      (a, b) =>
+        new Date(b.date as string).getTime() -
+        new Date(a.date as string).getTime()
     );
 
     // Apply limit if specified

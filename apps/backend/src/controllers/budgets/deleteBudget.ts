@@ -45,7 +45,11 @@ export async function deleteBudget(req: Request, res: Response): Promise<void> {
 
     // Delete all budget items
     for (const item of budgetItems) {
-      await googleSheetsService.delete(spreadsheetId, 'budget_items', item.id);
+      await googleSheetsService.delete(
+        spreadsheetId,
+        'budget_items',
+        item.id as string
+      );
     }
 
     // Delete the budget

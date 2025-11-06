@@ -83,7 +83,7 @@ export async function checkGoalProgress(
       0
     );
 
-    const limitAmount = parseFloat(goal.limit_amount);
+    const limitAmount = parseFloat(goal.limit_amount as string);
     const remainingAmount = limitAmount - currentAmount;
     const percentageUsed = (currentAmount / limitAmount) * 100;
     const isExceeded = currentAmount > limitAmount;
