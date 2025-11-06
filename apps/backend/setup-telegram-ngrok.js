@@ -1,15 +1,31 @@
+/* eslint-disable no-console */
 // Load environment variables from .env file
 require('dotenv').config();
 
 const ngrok = require('@ngrok/ngrok');
 const https = require('https');
 
-// Configuration
-const BOT_TOKEN =
-  process.env.TELEGRAM_BOT_TOKEN ||
-  '7388924117:AAFcht-1MsFTpixlYsKdN5Tce_KX93UNU5M';
-const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || 'MMMSSEavlONGBoT';
+// Configuration - Load from environment variables only
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME;
 const PORT = process.env.PORT || 3001;
+
+// Validate required environment variables
+if (!BOT_TOKEN) {
+  console.error('❌ ERROR: TELEGRAM_BOT_TOKEN is required in .env file');
+  console.log('\n📋 To fix this:');
+  console.log('1. Create a .env file in the backend directory');
+  console.log('2. Add: TELEGRAM_BOT_TOKEN=your_bot_token_here');
+  console.log('3. Add: TELEGRAM_BOT_USERNAME=your_bot_username');
+  process.exit(1);
+}
+
+if (!BOT_USERNAME) {
+  console.error('❌ ERROR: TELEGRAM_BOT_USERNAME is required in .env file');
+  console.log('\n📋 To fix this:');
+  console.log('1. Add to your .env file: TELEGRAM_BOT_USERNAME=your_bot_username');
+  process.exit(1);
+}
 
 async function setupTelegramWithNgrok() {
   try {
@@ -47,6 +63,7 @@ async function setupTelegramWithNgrok() {
     });
 
     // Keep the process alive indefinitely
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       await new Promise((resolve) => setTimeout(resolve, 30000)); // Wait 30 seconds
     }

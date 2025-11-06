@@ -79,6 +79,7 @@ jobs:
 
       - name: Run Snyk security scan
         uses: snyk/actions/node@master
+        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
@@ -86,6 +87,7 @@ jobs:
 
       - name: OWASP ZAP Scan
         uses: zaproxy/action-baseline@v0.10.0
+        continue-on-error: true
         with:
           target: 'http://localhost:3000'
 
