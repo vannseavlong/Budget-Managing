@@ -204,6 +204,52 @@ router.post('/webhook', handleWebhook);
  */
 router.get('/test', testConnection);
 
+/**
+ * @swagger
+ * /api/v1/telegram/connect-success:
+ *   get:
+ *     summary: Handle successful Telegram connection and redirect to app
+ *     tags: [Telegram]
+ *     parameters:
+ *       - in: query
+ *         name: user_email
+ *         schema:
+ *           type: string
+ *         description: User email for identification
+ *       - in: query
+ *         name: telegram_username
+ *         schema:
+ *           type: string
+ *         description: Telegram username
+ *       - in: query
+ *         name: chat_id
+ *         schema:
+ *           type: string
+ *         description: Telegram chat ID
+ *     responses:
+ *       302:
+ *         description: Redirect to app with success message
+ *       400:
+ *         description: Invalid parameters
+ */
+router.get('/connect-success', (req, res): void => {
+  const { user_email, telegram_username, chat_id } = req.query;
+
+  if (!user_email || !telegram_username || !chat_id) {
+    res.status(400).json({
+      success: false,
+      message: 'Missing required parameters',
+    });
+    return;
+  }
+
+  // Redirect to frontend settings page with success parameters
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const redirectUrl = `${frontendUrl}/settings?telegram_connected=true&username=${encodeURIComponent(telegram_username as string)}`;
+
+  res.redirect(redirectUrl);
+});
+
 router.get('/debug', debugEnv);
 
 export default router;

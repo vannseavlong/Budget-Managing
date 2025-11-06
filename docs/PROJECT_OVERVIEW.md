@@ -1,4 +1,28 @@
-# Project Structure Overview
+# Project Structure Overview - Google Sheets Integration
+
+## 🎯 Project Vision
+
+A privacy-first budget management application where each user's data is stored in their own Google Drive, eliminating the need for centralized databases while providing a rich, responsive user experience.
+
+## 🏗️ Architecture Overview
+
+### Data Flow
+```
+User Authentication (Google OAuth)
+         ↓
+Google Sheets API (User's Drive)
+         ↓
+Express.js API Layer
+         ↓
+Next.js Frontend (Responsive)
+```
+
+### Key Benefits
+- **Privacy-First**: Data stays in user's Google Drive
+- **No Database Setup**: Eliminates MongoDB/Redis infrastructure
+- **Automatic Backup**: Google Drive handles data persistence
+- **Collaborative**: Users can view/edit their spreadsheet directly
+- **Cost-Effective**: No database hosting costs
 
 ## 📁 Complete Directory Structure
 
@@ -21,12 +45,38 @@ Budget-Managing/
 │   │   ├── 📄 Dockerfile                   # Backend container configuration
 │   │   ├── 📄 package.json                 # Backend dependencies and scripts
 │   │   └── 📄 tsconfig.json               # TypeScript configuration
-│   └── 📁 frontend/                        # Next.js + shadcn/ui
-│       ├── 📁 src/
-│       │   └── 📁 app/
-│       │       ├── 📄 globals.css          # Global styles with Tailwind
-│       │       ├── 📄 layout.tsx           # Root layout component
-│       │       └── 📄 page.tsx             # Home page component
+   └── 📁 frontend/                        # Next.js + shadcn/ui
+       ├── 📁 src/
+       │   ├── 📁 app/                         # Next.js App Router
+       │   │   ├── 📄 globals.css              # Global styles with Tailwind
+       │   │   ├── 📄 layout.tsx               # Root layout component
+       │   │   └── 📄 page.tsx                 # Home page component
+       │   ├── 📁 components/                  # React Components
+       │   │   ├── 📁 features/                # Feature-specific components
+       │   │   │   ├── 📄 Dashboard.tsx        # Dashboard overview
+       │   │   │   ├── 📄 BudgetManagement.tsx # Budget tracking
+       │   │   │   ├── 📄 Categories.tsx       # Category management
+       │   │   │   ├── 📄 DailyTracker.tsx     # Daily expense tracking
+       │   │   │   ├── 📄 Goals.tsx            # Financial goals
+       │   │   │   ├── 📄 Settings.tsx         # App settings
+       │   │   │   └── 📄 Summary.tsx          # Financial summary
+       │   │   ├── 📁 layout/                  # Layout components
+       │   │   │   ├── 📄 BottomNavigation.tsx # Mobile navigation
+       │   │   │   └── 📄 DesktopSidebar.tsx   # Desktop sidebar
+       │   │   ├── 📁 ui/                      # shadcn/ui components
+       │   │   │   ├── 📄 button.tsx           # Button component
+       │   │   │   ├── 📄 card.tsx             # Card component
+       │   │   │   ├── 📄 input.tsx            # Input component
+       │   │   │   └── ...                     # Other UI components
+       │   │   └── 📄 App.tsx                  # Main app component
+       │   ├── 📁 context/                     # React Context
+       │   │   └── 📄 AppContext.tsx           # Global state management
+       │   ├── 📁 hooks/                       # Custom React hooks
+       │   │   └── 📄 use-mobile.ts            # Mobile detection hook
+       │   ├── 📁 services/                    # API services
+       │   │   └── 📄 api.ts                   # API client functions
+       │   └── 📁 types/                       # TypeScript types
+       │       └── 📄 index.ts                 # Type definitions
 │       ├── 📄 .env.example                 # Frontend environment template
 │       ├── 📄 Dockerfile                   # Frontend container configuration
 │       ├── 📄 next.config.js              # Next.js configuration
@@ -65,15 +115,26 @@ Budget-Managing/
 - **Runtime**: Node.js 20+
 - **Framework**: Express.js
 - **Language**: TypeScript
-- **Database**: MongoDB + Redis
-- **Authentication**: JWT + bcrypt
+- **Database**: Google Sheets API (User-owned spreadsheets)
+- **Authentication**: Google OAuth 2.0 + JWT
 - **Security**: Helmet, Rate limiting, Input validation (Zod)
 - **Logging**: Winston
 - **Testing**: Jest + Supertest
 - **API Documentation**: Swagger/OpenAPI
+- **Google APIs**: googleapis, google-auth-library
 
 ### Frontend Technologies
 - **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **UI Library**: shadcn/ui + Radix UI primitives
+- **Styling**: Tailwind CSS
+- **State Management**: React Context + useReducer
+- **Charts**: Recharts
+- **Date Picker**: react-day-picker
+- **Notifications**: Sonner
+- **Icons**: Lucide React
+- **Responsive Design**: Mobile-first with conditional layouts
+- **Testing**: Jest + Playwright
 - **Language**: TypeScript
 - **UI Library**: shadcn/ui + Radix UI primitives
 - **Styling**: Tailwind CSS

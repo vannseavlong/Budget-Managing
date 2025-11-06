@@ -2,6 +2,17 @@
 
 A comprehensive, security-first budget management application built with modern technologies and DevOps best practices.
 
+## ✨ Key Features
+
+- **🔐 Secure Google Authentication**: OAuth 2.0 integration with Google accounts
+- **📊 Personal Data Storage**: Each user's data stored in their own Google Drive spreadsheet
+- **📱 Responsive Design**: Mobile-first UI with bottom navigation for mobile and sidebar for desktop
+- **⚡ Real-time Sync**: Automatic synchronization with Google Sheets
+- **🎨 Modern UI**: Built with shadcn/ui and Tailwind CSS
+- **🔒 Privacy-First**: No centralized database - your data stays in your Google Drive
+- **🚀 Easy Setup**: No database configuration required
+- **📈 Rich Analytics**: Visual charts and budget tracking with Recharts
+
 ## 🏗️ Architecture
 
 ### Monorepo Structure
@@ -21,18 +32,23 @@ Budget-Managing/
 #### Backend
 - **Framework**: Node.js + Express.js
 - **Language**: TypeScript
-- **Database**: MongoDB + Redis
-- **Authentication**: JWT + bcrypt
+- **Database**: Google Sheets API (User-owned spreadsheets)
+- **Authentication**: Google OAuth 2.0 + JWT
 - **Security**: Helmet, Rate limiting, Input validation
 - **Logging**: Winston
 - **Testing**: Jest + Supertest
+- **Google APIs**: googleapis, google-auth-library
 
 #### Frontend
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript
 - **UI Library**: shadcn/ui + Radix UI
 - **Styling**: Tailwind CSS
-- **State Management**: React Query
+- **State Management**: React Context + useReducer
+- **Charts**: Recharts
+- **Date Picker**: react-day-picker
+- **Notifications**: Sonner
+- **Responsive Design**: Mobile-first with bottom navigation
 - **Testing**: Jest + Playwright
 
 #### DevOps & Infrastructure
@@ -48,8 +64,10 @@ Budget-Managing/
 ### Prerequisites
 - Node.js 20+
 - npm 9+
-- Docker & Docker Compose
+- Docker & Docker Compose (optional)
 - Git
+- Google account with Google Cloud Console access
+- Google Sheets API and Google Drive API enabled
 
 ### Installation
 
@@ -73,7 +91,13 @@ Budget-Managing/
    cp apps/frontend/.env.example apps/frontend/.env
    ```
 
-4. **Start development services**
+4. **Configure Google Sheets Integration**
+   - Follow the [Google Sheets Setup Guide](docs/GOOGLE_SHEETS_SETUP.md)
+   - Create Google Cloud project and enable APIs
+   - Configure OAuth credentials
+   - Update environment variables with Google credentials
+
+5. **Start development services**
    ```bash
    # Start all services
    npm run dev
@@ -83,7 +107,9 @@ Budget-Managing/
    npm run dev --workspace=apps/frontend
    ```
 
-### Using Docker
+### Using Docker (Optional)
+
+Docker is optional since the application uses Google Sheets as the database. Use Docker for containerized deployment:
 
 1. **Start all services**
    ```bash
@@ -202,8 +228,8 @@ The project includes a comprehensive CI/CD pipeline with:
 - **Error Tracking**: Centralized error collection and alerting
 
 ### Infrastructure Monitoring
-- **Container Health**: Docker health checks
-- **Database**: MongoDB and Redis monitoring
+- **Container Health**: Docker health checks (if using containerized deployment)
+- **Google API**: Google Sheets API rate limits and quota monitoring
 - **Network**: Traffic and security monitoring
 - **Resource Usage**: CPU, memory, and disk monitoring
 
@@ -255,6 +281,8 @@ npm run test --workspace=apps/frontend
 ## 📚 Documentation
 
 - [API Documentation](docs/api/README.md)
+- [Google Sheets Integration](docs/GOOGLE_SHEETS_SETUP.md)
+- [Google Sheets API Reference](docs/api/GOOGLE_SHEETS_API.md)
 - [Frontend Components](docs/frontend/README.md)
 - [Security Policy](SECURITY.md)
 - [Contributing Guidelines](CONTRIBUTING.md)
@@ -271,20 +299,28 @@ npm run test --workspace=apps/frontend
    lsof -i :3001
    ```
 
-2. **Docker issues**
+2. **Docker issues** (if using containerized deployment)
    ```bash
    # Reset Docker environment
    docker-compose down -v
    docker system prune -a
    ```
 
-3. **Database connection issues**
+3. **Google Sheets API issues**
    ```bash
-   # Check MongoDB connection
-   docker-compose logs mongodb
+   # Check Google API credentials
+   echo $GOOGLE_CLIENT_ID
+   echo $GOOGLE_CLIENT_SECRET
    
-   # Check Redis connection
-   docker-compose logs redis
+   # Verify API quota and limits
+   # Check Google Cloud Console > APIs & Services > Quotas
+   ```
+
+4. **Authentication issues**
+   ```bash
+   # Clear browser cache and cookies for Google OAuth
+   # Regenerate OAuth credentials in Google Cloud Console
+   # Verify redirect URIs are correctly configured
    ```
 
 ## 📄 License

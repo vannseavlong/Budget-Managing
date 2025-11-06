@@ -1,0 +1,12 @@
+{
+  "*.{js,jsx,ts,tsx}": ["eslint --fix", "prettier --write"],
+  "*.{json,md,yml,yaml}": ["prettier --write"],
+  "apps/frontend/**/*.{js,jsx,ts,tsx}": [
+    "npm run lint:fix --workspace=apps/frontend",
+    "npm run type-check --workspace=apps/frontend"
+  ],
+  "apps/backend/**/*.{js,ts}": [
+    "npm run lint:fix --workspace=apps/backend",
+    "npm run type-check --workspace=apps/backend"
+  ]
+}
