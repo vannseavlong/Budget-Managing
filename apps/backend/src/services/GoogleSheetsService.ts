@@ -222,7 +222,8 @@ export class GoogleSheetsService {
             'id',
             'user_id',
             'name',
-            'color',
+            'emoji', // new emoji column
+            'color', // keep color for backward compatibility
             'created_at',
             'updated_at',
           ],
@@ -724,6 +725,58 @@ export class GoogleSheetsService {
     });
 
     return response.data.values?.[0] || [];
+  }
+
+  /**
+   * Ensure the categories sheet has the expected columns (adds emoji column if missing)
+   * This is idempotent and safe to call for existing spreadsheets.
+   */
+  async ensureCategoriesSchema(spreadsheetId: string): Promise<void> {
+    const sheets = google.sheets({
+      version: 'v4',
+      auth: this.getAuthenticatedClient(),
+    });
+
+    try {
+      const headers = await this.getHeaders(spreadsheetId, 'categories');
+
+      // If no headers found, the sheet may not exist yet; create it with the proper schema
+      if (!headers || headers.length === 0) {
+        const schema: TableSchema = {
+          name: 'categories',
+          columns: [
+            'id',
+            'user_id',
+            'name',
+            'emoji',
+            'color',
+            'created_at',
+            'updated_at',
+          ],
+          primaryKey: 'id',
+        };
+        await this.createSheet(spreadsheetId, schema);
+        return;
+      }
+
+      const required = ['emoji'];
+      const missing = required.filter((c) => !headers.includes(c));
+      if (missing.length === 0) return;
+
+      // Append missing headers to end of header row
+      const newHeaders = [...headers, ...missing];
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `categories!A1:Z1`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [newHeaders] },
+      });
+
+      logger.info(`Added missing category columns: ${missing.join(', ')}`);
+    } catch (error) {
+      logger.error('Error ensuring categories schema:', error);
+      throw error;
+    }
   }
 
   /**

@@ -16,6 +16,7 @@ interface AddCategoryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAdd: (name: string, emoji: string) => void;
+  isLoading?: boolean;
 }
 
 const emojiOptions = [
@@ -49,6 +50,7 @@ export function AddCategoryDialog({
   open,
   onOpenChange,
   onAdd,
+  isLoading = false,
 }: AddCategoryDialogProps) {
   const [categoryName, setCategoryName] = useState<string>('');
   const [selectedEmoji, setSelectedEmoji] = useState<string>(emojiOptions[0]);
@@ -123,6 +125,7 @@ export function AddCategoryDialog({
             type="button"
             variant="outline"
             onClick={handleCancel}
+            disabled={isLoading}
             className="flex-1"
           >
             Cancel
@@ -130,10 +133,10 @@ export function AddCategoryDialog({
           <Button
             type="button"
             onClick={handleAdd}
-            disabled={!categoryName.trim()}
+            disabled={!categoryName.trim() || isLoading}
             className="flex-1 bg-black hover:bg-gray-800 text-white"
           >
-            Add Category
+            {isLoading ? 'Creating...' : 'Add Category'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -16,9 +16,13 @@ interface Category {
   id: string;
   name: string;
   emoji: string;
+  color?: string; // Keep for backward compatibility
   created: string;
   usage: string;
   transactionCount: number;
+  userId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface EditCategoryDialogProps {
@@ -26,6 +30,7 @@ interface EditCategoryDialogProps {
   onOpenChange: (open: boolean) => void;
   category: Category | null;
   onSave: (id: string, name: string, emoji: string) => void;
+  isLoading?: boolean;
 }
 
 const emojiOptions = [
@@ -60,6 +65,7 @@ export function EditCategoryDialog({
   onOpenChange,
   category,
   onSave,
+  isLoading = false,
 }: EditCategoryDialogProps) {
   // Initialize state with current category values
   const [categoryName, setCategoryName] = useState<string>(
@@ -135,6 +141,7 @@ export function EditCategoryDialog({
             type="button"
             variant="outline"
             onClick={handleCancel}
+            disabled={isLoading}
             className="flex-1"
           >
             Cancel
@@ -142,10 +149,10 @@ export function EditCategoryDialog({
           <Button
             type="button"
             onClick={handleSave}
-            disabled={!categoryName.trim()}
+            disabled={!categoryName.trim() || isLoading}
             className="flex-1 bg-black hover:bg-gray-800 text-white"
           >
-            Update Category
+            {isLoading ? 'Updating...' : 'Update Category'}
           </Button>
         </DialogFooter>
       </DialogContent>

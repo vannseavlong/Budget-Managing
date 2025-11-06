@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useCategories } from '@/hooks/useCategories';
+import { useToast } from '@/hooks/useToast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -18,86 +20,117 @@ interface Category {
   id: string;
   name: string;
   emoji: string;
+  color?: string; // Keep for backward compatibility
   created: string;
   usage: string;
   transactionCount: number;
+  userId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-const sampleCategories: Category[] = [
-  {
-    id: '1',
-    name: 'Food & Dining',
-    emoji: '🍽️',
-    created: '10/29',
-    usage: '3 transactions',
-    transactionCount: 3,
-  },
-  {
-    id: '2',
-    name: 'Transportation',
-    emoji: '🚗',
-    created: '10/30',
-    usage: 'Not used',
-    transactionCount: 0,
-  },
-  {
-    id: '3',
-    name: 'Bills & Utilities',
-    emoji: '💡',
-    created: '10/31',
-    usage: 'Not used',
-    transactionCount: 0,
-  },
-  {
-    id: '4',
-    name: 'Shopping',
-    emoji: '🛍️',
-    created: '11/01',
-    usage: 'Not used',
-    transactionCount: 0,
-  },
-  {
-    id: '5',
-    name: 'Entertainment',
-    emoji: '🎬',
-    created: '11/02',
-    usage: '1 transaction',
-    transactionCount: 1,
-  },
-  {
-    id: '6',
-    name: 'Healthcare',
-    emoji: '🏥',
-    created: '11/03',
-    usage: 'Not used',
-    transactionCount: 0,
-  },
-  {
-    id: '7',
-    name: 'Education',
-    emoji: '📚',
-    created: '11/04',
-    usage: 'Not used',
-    transactionCount: 0,
-  },
-  {
-    id: '8',
-    name: 'Other',
-    emoji: '📂',
-    created: '11/05',
-    usage: 'Not used',
-    transactionCount: 0,
-  },
-];
+// Emoji to color mapping for backward compatibility
+const emojiToColorMap: Record<string, string> = {
+  '🍽️': '#FF6B6B', // Food & Dining - Red
+  '🚗': '#4ECDC4', // Transportation - Teal
+  '💡': '#FFD93D', // Bills & Utilities - Yellow
+  '🛍️': '#6BCF7F', // Shopping - Green
+  '🎬': '#4D96FF', // Entertainment - Blue
+  '🏥': '#FF6B9D', // Healthcare - Pink
+  '📚': '#C44569', // Education - Purple
+  '💰': '#F8B500', // Finance - Orange
+  '🏠': '#54A0FF', // Home - Light Blue
+  '✈️': '#5F27CD', // Travel - Dark Purple
+  '🎯': '#FF9F43', // Goals - Orange
+  '📂': '#8395A7', // Other - Gray
+  '💳': '#3867D6', // Credit Card - Blue
+  '⛽': '#20BF6B', // Gas - Green
+  '📱': '#FF9FF3', // Technology - Pink
+};
+
+// Get color from emoji
+const getColorFromEmoji = (emoji: string): string => {
+  return emojiToColorMap[emoji] || '#3B82F6'; // Default blue
+};
+
+// Mapping function to convert API data to UI format
+const mapApiCategoryToUI = (apiCategory: any): Category => {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
+    const month = monthNames[date.getMonth()];
+    const day = date.getDate().toString().padStart(2, '0');
+    const year = date.getFullYear();
+
+    return `${month}-${day}-${year}`;
+  };
+
+  return {
+    id: apiCategory.id,
+    name: apiCategory.name,
+    emoji: apiCategory.emoji || '📂', // Use emoji directly from API, fallback to default
+    color: apiCategory.color, // Keep color for backward compatibility if needed
+    created: formatDate(apiCategory.createdAt || new Date().toISOString()),
+    usage: 'Not used', // Will be updated when we have transaction integration
+    transactionCount: 0, // Will be updated when we have transaction integration
+    userId: apiCategory.userId,
+    createdAt: apiCategory.createdAt,
+    updatedAt: apiCategory.updatedAt,
+  };
+};
 
 export default function CategoriesPage() {
   const { user } = useAuth();
-  const [categories, setCategories] = useState<Category[]>(sampleCategories);
+  const { toast } = useToast();
+
+  // Use our categories hook for API integration
+  const {
+    categories: apiCategories,
+    loading,
+    error,
+    isCreating,
+    isUpdating,
+    // isDeleting, // Commented out as not needed in this UI
+    createCategory,
+    updateCategory,
+    deleteCategory,
+    resetError,
+  } = useCategories();
+
+  // Convert API categories to UI format
+  const categories = apiCategories.map(mapApiCategoryToUI);
+
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+
+  // Show error messages via toast
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error,
+        variant: 'destructive',
+      });
+      resetError();
+    }
+  }, [error, toast, resetError]);
 
   // Pagination logic
   const totalPages = Math.ceil(categories.length / pageSize);
@@ -114,31 +147,69 @@ export default function CategoriesPage() {
     setIsEditDialogOpen(true);
   };
 
-  const handleDeleteCategory = (categoryId: string) => {
-    setCategories(categories.filter((cat) => cat.id !== categoryId));
+  const handleDeleteCategory = async (categoryId: string) => {
+    try {
+      await deleteCategory(categoryId);
+      toast({
+        title: 'Success',
+        description: 'Category deleted successfully',
+      });
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete category',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const handleSaveCategory = (id: string, name: string, emoji: string) => {
-    setCategories(
-      categories.map((cat) => (cat.id === id ? { ...cat, name, emoji } : cat))
-    );
-    setIsEditDialogOpen(false);
-    setEditingCategory(null);
+  const handleSaveCategory = async (
+    id: string,
+    name: string,
+    emoji: string
+  ) => {
+    try {
+      await updateCategory(id, {
+        name,
+        emoji,
+        color: getColorFromEmoji(emoji), // Add color for backward compatibility
+      });
+
+      setIsEditDialogOpen(false);
+      setEditingCategory(null);
+
+      toast({
+        title: 'Success',
+        description: 'Category updated successfully',
+      });
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to update category',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const handleAddCategory = (name: string, emoji: string) => {
-    const newCategory: Category = {
-      id: Date.now().toString(),
-      name,
-      emoji,
-      created: new Date().toLocaleDateString('en-US', {
-        month: 'numeric',
-        day: 'numeric',
-      }),
-      usage: 'Not used',
-      transactionCount: 0,
-    };
-    setCategories([...categories, newCategory]);
+  const handleAddCategory = async (name: string, emoji: string) => {
+    try {
+      await createCategory({
+        name,
+        emoji,
+        color: getColorFromEmoji(emoji), // Add color for backward compatibility
+      });
+
+      toast({
+        title: 'Success',
+        description: 'Category created successfully',
+      });
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to create category',
+        variant: 'destructive',
+      });
+    }
   };
 
   const ActionDropdown = ({ category }: { category: Category }) => (
@@ -209,41 +280,61 @@ export default function CategoriesPage() {
 
             {/* Table Body */}
             <div className="divide-y">
-              {currentCategories.map((category) => (
-                <div
-                  key={category.id}
-                  className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-gray-50"
-                >
-                  {/* Name with Emoji */}
-                  <div className="col-span-5 flex items-center gap-3">
-                    <span className="text-lg">{category.emoji}</span>
-                    <span className="font-medium">{category.name}</span>
-                  </div>
-
-                  {/* Created Date */}
-                  <div className="col-span-2 text-sm text-muted-foreground">
-                    {category.created}
-                  </div>
-
-                  {/* Usage */}
-                  <div className="col-span-3">
-                    <span
-                      className={`text-sm ${
-                        category.transactionCount > 0
-                          ? 'text-green-600 font-medium'
-                          : 'text-muted-foreground'
-                      }`}
-                    >
-                      {category.usage}
-                    </span>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="col-span-2 flex justify-end">
-                    <ActionDropdown category={category} />
+              {loading ? (
+                <div className="p-8 text-center">
+                  <div className="inline-flex items-center gap-2 text-sm text-gray-500">
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+                    Loading categories...
                   </div>
                 </div>
-              ))}
+              ) : currentCategories.length === 0 ? (
+                <div className="p-8 text-center">
+                  <p className="text-gray-500">No categories found</p>
+                  <Button
+                    onClick={() => setIsAddDialogOpen(true)}
+                    className="mt-2"
+                    size="sm"
+                  >
+                    Create your first category
+                  </Button>
+                </div>
+              ) : (
+                currentCategories.map((category) => (
+                  <div
+                    key={category.id}
+                    className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-gray-50"
+                  >
+                    {/* Name with Emoji */}
+                    <div className="col-span-5 flex items-center gap-3">
+                      <span className="text-lg">{category.emoji}</span>
+                      <span className="font-medium">{category.name}</span>
+                    </div>
+
+                    {/* Created Date */}
+                    <div className="col-span-2 text-sm text-muted-foreground">
+                      {category.created}
+                    </div>
+
+                    {/* Usage */}
+                    <div className="col-span-3">
+                      <span
+                        className={`text-sm ${
+                          category.transactionCount > 0
+                            ? 'text-green-600 font-medium'
+                            : 'text-muted-foreground'
+                        }`}
+                      >
+                        {category.usage}
+                      </span>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="col-span-2 flex justify-end">
+                      <ActionDropdown category={category} />
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -308,6 +399,7 @@ export default function CategoriesPage() {
         onOpenChange={setIsEditDialogOpen}
         category={editingCategory}
         onSave={handleSaveCategory}
+        isLoading={isUpdating}
       />
 
       {/* Add Category Dialog */}
@@ -315,6 +407,7 @@ export default function CategoriesPage() {
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         onAdd={handleAddCategory}
+        isLoading={isCreating}
       />
     </div>
   );
