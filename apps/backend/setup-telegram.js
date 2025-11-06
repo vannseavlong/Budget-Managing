@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console */
 
 /**
  * Telegram Bot Setup Script
@@ -7,17 +8,37 @@
  * and commands for the Budget Manager integration.
  */
 
-const https = require('https');
-const http = require('http');
+// Load environment variables from .env file
+require('dotenv').config();
 
-// Configuration
-const BOT_TOKEN =
-  process.env.TELEGRAM_BOT_TOKEN ||
-  '7388924117:AAFcht-1MsFTpixlYsKdN5Tce_KX93UNU5M';
-const WEBHOOK_URL =
-  process.env.TELEGRAM_WEBHOOK_URL ||
-  'https://your-ngrok-url.ngrok-free.app/api/v1/telegram/webhook';
-const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || 'MMMSSEavlONGBoT';
+const https = require('https');
+
+// Configuration - Load from environment variables only
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const WEBHOOK_URL = process.env.TELEGRAM_WEBHOOK_URL;
+const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME;
+
+// Validate required environment variables
+if (!BOT_TOKEN) {
+  console.error('❌ ERROR: TELEGRAM_BOT_TOKEN is required in .env file');
+  console.log('\n📋 To fix this:');
+  console.log('1. Create a .env file in the backend directory');
+  console.log('2. Add: TELEGRAM_BOT_TOKEN=your_bot_token_here');
+  console.log('3. Add: TELEGRAM_BOT_USERNAME=your_bot_username');
+  console.log('4. Add: TELEGRAM_WEBHOOK_URL=your_ngrok_url');
+  process.exit(1);
+}
+
+if (!BOT_USERNAME) {
+  console.error('❌ ERROR: TELEGRAM_BOT_USERNAME is required in .env file');
+  process.exit(1);
+}
+
+if (!WEBHOOK_URL) {
+  console.error('❌ ERROR: TELEGRAM_WEBHOOK_URL is required in .env file');
+  console.log('\n📋 Note: Use setup-telegram-ngrok.js for automatic URL generation');
+  process.exit(1);
+}
 
 console.log('🤖 Setting up Telegram Bot Integration...\n');
 

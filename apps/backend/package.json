@@ -16,7 +16,9 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "type-check": "tsc --noEmit",
     "clean": "rimraf dist",
-    "security:check": "npm audit && snyk test"
+    "security:check": "npm audit && snyk test",
+    "telegram:setup": "node setup-telegram.js",
+    "telegram:setup-ngrok": "node setup-telegram-ngrok.js"
   },
   "dependencies": {
     "@ngrok/ngrok": "^1.5.2",
