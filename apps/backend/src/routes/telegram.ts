@@ -8,8 +8,10 @@ import {
   testConnection,
   debugEnv,
   setupNotifications,
+  connectTelegram,
+  getConnectionStatus,
+  debugConnections,
 } from '../controllers/telegram';
-import { TelegramController } from '../controllers/TelegramController';
 import { TelegramConnectionStore } from '../utils/TelegramConnectionStore';
 
 const router = express.Router();
@@ -219,9 +221,6 @@ router.post('/send', sendMessage);
  */
 router.post('/setup-notifications', setupNotifications);
 
-// Create TelegramController instance for new methods
-const telegramController = new TelegramController();
-
 /**
  * @swagger
  * /api/v1/telegram/connect:
@@ -256,10 +255,7 @@ const telegramController = new TelegramController();
  *       401:
  *         description: Unauthorized
  */
-router.post(
-  '/connect',
-  telegramController.connectTelegram.bind(telegramController)
-);
+router.post('/connect', connectTelegram);
 
 /**
  * @swagger
@@ -275,10 +271,7 @@ router.post(
  *       401:
  *         description: Unauthorized
  */
-router.get(
-  '/status',
-  telegramController.getConnectionStatus.bind(telegramController)
-);
+router.get('/status', getConnectionStatus);
 
 /**
  * @swagger
@@ -292,10 +285,7 @@ router.get(
  *       200:
  *         description: All connections and user info
  */
-router.get(
-  '/debug-connections',
-  telegramController.debugConnections.bind(telegramController)
-);
+router.get('/debug-connections', debugConnections);
 
 /**
  * @swagger

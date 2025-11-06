@@ -31,6 +31,7 @@ export const API_ENDPOINTS = {
     GET: (id: string) => `${API_BASE_URL}/api/v1/categories/${id}`,
     UPDATE: (id: string) => `${API_BASE_URL}/api/v1/categories/${id}`,
     DELETE: (id: string) => `${API_BASE_URL}/api/v1/categories/${id}`,
+    MIGRATE_EMOJIS: `${API_BASE_URL}/api/v1/categories/migrate-emojis`,
   },
 
   // Transactions endpoints
