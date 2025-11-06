@@ -28,20 +28,20 @@ export async function deleteTransaction(
       const account = await googleSheetsService.findById(
         spreadsheetId,
         'accounts',
-        transaction.account_id
+        transaction.account_id as string
       );
       if (account) {
         const adjustment =
           transaction.type === 'income'
-            ? -parseFloat(transaction.amount)
-            : parseFloat(transaction.amount);
+            ? -parseFloat(transaction.amount as string)
+            : parseFloat(transaction.amount as string);
 
-        const newBalance = parseFloat(account.balance) + adjustment;
+        const newBalance = parseFloat(account.balance as string) + adjustment;
 
         await googleSheetsService.update(
           spreadsheetId,
           'accounts',
-          transaction.account_id,
+          transaction.account_id as string,
           {
             balance: newBalance,
           }

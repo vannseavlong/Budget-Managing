@@ -22,10 +22,24 @@ export interface TableSchema {
   }[];
 }
 
+// Type for database records - allows any string key with unknown value type
+export type DatabaseRecord = Record<string, unknown>;
+
+// Type for filters applied to database queries
+export type RecordFilters = Record<string, unknown>;
+
 export class GoogleSheetsService {
-  private oauth2Client: OAuth2Client;
+  private oauth2Client: OAuth2Client | null = null;
+  private isInitialized: boolean = false;
 
   constructor() {
+    // Don't initialize immediately - wait for first use
+    // This prevents startup errors when credentials are not available
+  }
+
+  private initializeIfNeeded(): void {
+    if (this.isInitialized) return;
+
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
     const redirectUri =
@@ -38,22 +52,39 @@ export class GoogleSheetsService {
       );
     }
 
-    console.log('Using OAuth credentials:');
-    console.log('Client ID:', clientId ? 'SET' : 'MISSING');
-    console.log('Client Secret:', clientSecret ? 'SET' : 'MISSING');
-    console.log('Redirect URI:', redirectUri ? 'SET' : 'MISSING');
+    // console.log('Initializing Google Sheets Service:');
+    // console.log('Client ID:', clientId ? 'SET' : 'MISSING');
+    // console.log('Client Secret:', clientSecret ? 'SET' : 'MISSING');
+    // console.log('Redirect URI:', redirectUri ? 'SET' : 'MISSING');
 
     this.oauth2Client = new google.auth.OAuth2(
       clientId,
       clientSecret,
       redirectUri
     );
+
+    this.isInitialized = true;
+  }
+
+  /**
+   * Get the oauth2Client with initialization check
+   */
+  private getAuthenticatedClient(): OAuth2Client {
+    this.initializeIfNeeded();
+
+    if (!this.oauth2Client) {
+      throw new Error('OAuth client not initialized');
+    }
+
+    return this.oauth2Client;
   }
 
   /**
    * Generate Google OAuth URL for user authentication
    */
   getAuthUrl(): string {
+    const client = this.getAuthenticatedClient();
+
     const scopes = [
       'https://www.googleapis.com/auth/spreadsheets',
       'https://www.googleapis.com/auth/drive.file',
@@ -61,7 +92,7 @@ export class GoogleSheetsService {
       'https://www.googleapis.com/auth/userinfo.profile',
     ];
 
-    return this.oauth2Client.generateAuthUrl({
+    return client.generateAuthUrl({
       access_type: 'offline',
       scope: scopes,
       prompt: 'consent',
@@ -73,7 +104,8 @@ export class GoogleSheetsService {
    */
   async getTokens(code: string): Promise<UserCredentials> {
     try {
-      const { tokens } = await this.oauth2Client.getToken(code);
+      const client = this.getAuthenticatedClient();
+      const { tokens } = await client.getToken(code);
       return tokens as UserCredentials;
     } catch (error) {
       logger.error('Error getting tokens:', error);
@@ -85,15 +117,22 @@ export class GoogleSheetsService {
    * Set user credentials for API calls
    */
   setCredentials(credentials: UserCredentials): void {
-    this.oauth2Client.setCredentials(credentials);
+    const client = this.getAuthenticatedClient();
+    client.setCredentials(credentials);
   }
 
   /**
    * Get or create user's Google Sheets database (persistent across logins)
    */
-  async getOrCreateUserDatabase(userEmail: string): Promise<string> {
+  async getOrCreateUserDatabase(
+    userEmail: string,
+    userName?: string
+  ): Promise<string> {
     try {
-      const drive = google.drive({ version: 'v3', auth: this.oauth2Client });
+      const drive = google.drive({
+        version: 'v3',
+        auth: this.getAuthenticatedClient(),
+      });
 
       // Search for existing Budget Manager spreadsheet for this user
       const searchResponse = await drive.files.list({
@@ -110,7 +149,7 @@ export class GoogleSheetsService {
       }
 
       // Create new spreadsheet if none exists
-      return await this.createNewUserDatabase(userEmail);
+      return await this.createNewUserDatabase(userEmail, userName);
     } catch (error) {
       logger.error('Error getting/creating user database:', error);
       throw new Error('Failed to get or create user database');
@@ -120,10 +159,14 @@ export class GoogleSheetsService {
   /**
    * Create a new Google Sheets database for the user
    */
-  async createNewUserDatabase(userEmail: string): Promise<string> {
+  async createNewUserDatabase(
+    userEmail: string,
+    userName?: string
+  ): Promise<string> {
     try {
-      const sheets = google.sheets({ version: 'v4', auth: this.oauth2Client });
-      const drive = google.drive({ version: 'v3', auth: this.oauth2Client });
+      const authClient = this.getAuthenticatedClient();
+      const sheets = google.sheets({ version: 'v4', auth: authClient });
+      // const drive = google.drive({ version: 'v3', auth: authClient });
 
       // Create a new spreadsheet
       const spreadsheet = await sheets.spreadsheets.create({
@@ -146,6 +189,8 @@ export class GoogleSheetsService {
             'name',
             'email',
             'password_hash',
+            'telegram_username',
+            'chatId',
             'created_at',
             'updated_at',
           ],
@@ -320,9 +365,11 @@ export class GoogleSheetsService {
       const userId = uuidv4();
       await this.insertUser(spreadsheetId, {
         id: userId,
-        name: userEmail.split('@')[0],
+        name: userName || userEmail.split('@')[0],
         email: userEmail,
         password_hash: '', // Empty for OAuth users
+        telegram_username: '', // Empty initially, will be set when user connects Telegram
+        chatId: '', // Empty initially, will be set when user connects Telegram
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
@@ -357,7 +404,10 @@ export class GoogleSheetsService {
     schema: TableSchema
   ): Promise<void> {
     try {
-      const sheets = google.sheets({ version: 'v4', auth: this.oauth2Client });
+      const sheets = google.sheets({
+        version: 'v4',
+        auth: this.getAuthenticatedClient(),
+      });
 
       // Add new sheet
       const addSheetResponse = await sheets.spreadsheets.batchUpdate({
@@ -437,10 +487,13 @@ export class GoogleSheetsService {
   async insert(
     spreadsheetId: string,
     tableName: string,
-    data: Record<string, any>
+    data: DatabaseRecord
   ): Promise<string> {
     try {
-      const sheets = google.sheets({ version: 'v4', auth: this.oauth2Client });
+      const sheets = google.sheets({
+        version: 'v4',
+        auth: this.getAuthenticatedClient(),
+      });
 
       // Generate ID if not provided
       if (!data.id) {
@@ -470,7 +523,7 @@ export class GoogleSheetsService {
       });
 
       logger.info(`Inserted record into ${tableName} with ID: ${data.id}`);
-      return data.id;
+      return data.id as string;
     } catch (error) {
       logger.error(`Error inserting into ${tableName}:`, error);
       throw error;
@@ -483,10 +536,13 @@ export class GoogleSheetsService {
   async find(
     spreadsheetId: string,
     tableName: string,
-    filters?: Record<string, any>
-  ): Promise<Record<string, any>[]> {
+    filters?: RecordFilters
+  ): Promise<DatabaseRecord[]> {
     try {
-      const sheets = google.sheets({ version: 'v4', auth: this.oauth2Client });
+      const sheets = google.sheets({
+        version: 'v4',
+        auth: this.getAuthenticatedClient(),
+      });
 
       // Get all data
       const response = await sheets.spreadsheets.values.get({
@@ -503,7 +559,7 @@ export class GoogleSheetsService {
       // Convert to objects
       let records = dataRows
         .map((row) => {
-          const record: Record<string, any> = {};
+          const record: DatabaseRecord = {};
           headers.forEach((header, index) => {
             record[header] = row[index] || '';
           });
@@ -534,7 +590,7 @@ export class GoogleSheetsService {
     spreadsheetId: string,
     tableName: string,
     id: string
-  ): Promise<Record<string, any> | null> {
+  ): Promise<DatabaseRecord | null> {
     const records = await this.find(spreadsheetId, tableName, { id });
     return records.length > 0 ? records[0] : null;
   }
@@ -546,10 +602,13 @@ export class GoogleSheetsService {
     spreadsheetId: string,
     tableName: string,
     id: string,
-    data: Record<string, any>
+    data: DatabaseRecord
   ): Promise<boolean> {
     try {
-      const sheets = google.sheets({ version: 'v4', auth: this.oauth2Client });
+      const sheets = google.sheets({
+        version: 'v4',
+        auth: this.getAuthenticatedClient(),
+      });
 
       // Find the row index
       const records = await this.find(spreadsheetId, tableName);
@@ -596,7 +655,10 @@ export class GoogleSheetsService {
     id: string
   ): Promise<boolean> {
     try {
-      const sheets = google.sheets({ version: 'v4', auth: this.oauth2Client });
+      const sheets = google.sheets({
+        version: 'v4',
+        auth: this.getAuthenticatedClient(),
+      });
 
       // Find the row index
       const records = await this.find(spreadsheetId, tableName);
@@ -651,7 +713,10 @@ export class GoogleSheetsService {
     spreadsheetId: string,
     tableName: string
   ): Promise<string[]> {
-    const sheets = google.sheets({ version: 'v4', auth: this.oauth2Client });
+    const sheets = google.sheets({
+      version: 'v4',
+      auth: this.getAuthenticatedClient(),
+    });
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
@@ -666,7 +731,7 @@ export class GoogleSheetsService {
    */
   private async insertUser(
     spreadsheetId: string,
-    userData: Record<string, any>
+    userData: DatabaseRecord
   ): Promise<void> {
     await this.insert(spreadsheetId, 'users', userData);
   }
@@ -676,7 +741,10 @@ export class GoogleSheetsService {
    */
   async validateUserDatabase(spreadsheetId: string): Promise<boolean> {
     try {
-      const sheets = google.sheets({ version: 'v4', auth: this.oauth2Client });
+      const sheets = google.sheets({
+        version: 'v4',
+        auth: this.getAuthenticatedClient(),
+      });
       await sheets.spreadsheets.get({ spreadsheetId });
       return true;
     } catch (error) {
@@ -690,12 +758,22 @@ export class GoogleSheetsService {
    */
   async getUserInfo(): Promise<{ email: string; name: string }> {
     try {
-      const oauth2 = google.oauth2({ version: 'v2', auth: this.oauth2Client });
+      const client = this.getAuthenticatedClient();
+      const oauth2 = google.oauth2({ version: 'v2', auth: client });
       const response = await oauth2.userinfo.get();
+
+      // Log the full response to debug
+      logger.info('Google userinfo response:', response.data);
+
+      // Try to get the name from multiple possible fields
+      const name =
+        response.data.name ||
+        response.data.given_name ||
+        response.data.email!.split('@')[0];
 
       return {
         email: response.data.email!,
-        name: response.data.name || response.data.email!.split('@')[0],
+        name: name,
       };
     } catch (error) {
       logger.error('Error getting user info:', error);
@@ -708,10 +786,14 @@ export class GoogleSheetsService {
    */
   async recreateDatabase(
     spreadsheetId: string,
-    userEmail: string
+    userEmail: string,
+    userName?: string
   ): Promise<void> {
     try {
-      const sheets = google.sheets({ version: 'v4', auth: this.oauth2Client });
+      const sheets = google.sheets({
+        version: 'v4',
+        auth: this.getAuthenticatedClient(),
+      });
 
       // Get existing spreadsheet
       const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
@@ -771,6 +853,8 @@ export class GoogleSheetsService {
             'name',
             'email',
             'password_hash',
+            'telegram_username',
+            'chatId',
             'created_at',
             'updated_at',
           ],
@@ -936,13 +1020,44 @@ export class GoogleSheetsService {
         },
       ];
 
-      // Setup the users sheet (already exists, just add headers)
+      // Setup the users sheet (already exists, just add headers and formatting)
       await sheets.spreadsheets.values.update({
         spreadsheetId,
         range: `users!A1:${String.fromCharCode(65 + schema[0].columns.length - 1)}1`,
         valueInputOption: 'RAW',
         requestBody: {
           values: [schema[0].columns],
+        },
+      });
+
+      // Apply blue header formatting to users table
+      const usersSheetId = 0; // Users sheet is typically the first sheet (ID = 0)
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [
+            {
+              repeatCell: {
+                range: {
+                  sheetId: usersSheetId,
+                  startRowIndex: 0,
+                  endRowIndex: 1,
+                  startColumnIndex: 0,
+                  endColumnIndex: schema[0].columns.length,
+                },
+                cell: {
+                  userEnteredFormat: {
+                    backgroundColor: { red: 0.2, green: 0.6, blue: 1.0 },
+                    textFormat: {
+                      bold: true,
+                      foregroundColor: { red: 1.0, green: 1.0, blue: 1.0 },
+                    },
+                  },
+                },
+                fields: 'userEnteredFormat(backgroundColor,textFormat)',
+              },
+            },
+          ],
         },
       });
 
@@ -955,9 +1070,11 @@ export class GoogleSheetsService {
       const userId = uuidv4();
       await this.insertUser(spreadsheetId, {
         id: userId,
-        name: userEmail.split('@')[0],
+        name: userName || userEmail.split('@')[0],
         email: userEmail,
         password_hash: '', // Empty for OAuth users
+        telegram_username: '', // Empty initially, will be set when user connects Telegram
+        chatId: '', // Empty initially, will be set when user connects Telegram
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
@@ -988,7 +1105,10 @@ export class GoogleSheetsService {
    */
   async createDatabaseSchema(spreadsheetId: string): Promise<void> {
     try {
-      const sheets = google.sheets({ version: 'v4', auth: this.oauth2Client });
+      const sheets = google.sheets({
+        version: 'v4',
+        auth: this.getAuthenticatedClient(),
+      });
 
       // Define the MMM database schema
       const schema = {
@@ -1184,7 +1304,10 @@ export class GoogleSheetsService {
     issues: string[];
   }> {
     try {
-      const sheets = google.sheets({ version: 'v4', auth: this.oauth2Client });
+      const sheets = google.sheets({
+        version: 'v4',
+        auth: this.getAuthenticatedClient(),
+      });
 
       const requiredTables = [
         'users',

@@ -72,7 +72,7 @@ export async function getTransactionStats(
     // Calculate statistics
     let totalIncome = 0;
     let totalExpenses = 0;
-    let transactionCount = filteredTransactions.length;
+    const transactionCount = filteredTransactions.length;
 
     filteredTransactions.forEach((transaction: any) => {
       const amount = parseFloat(transaction.amount);

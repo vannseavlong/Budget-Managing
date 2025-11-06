@@ -39,12 +39,14 @@ export async function updateBudget(req: Request, res: Response): Promise<void> {
     // Check if new year/month conflicts with existing budgets (if year or month is being updated)
     if (
       (validatedData.year &&
-        validatedData.year !== parseInt(existingBudget.year)) ||
+        validatedData.year !== parseInt(existingBudget.year as string)) ||
       (validatedData.month &&
-        validatedData.month !== parseInt(existingBudget.month))
+        validatedData.month !== parseInt(existingBudget.month as string))
     ) {
-      const newYear = validatedData.year || parseInt(existingBudget.year);
-      const newMonth = validatedData.month || parseInt(existingBudget.month);
+      const newYear =
+        validatedData.year || parseInt(existingBudget.year as string);
+      const newMonth =
+        validatedData.month || parseInt(existingBudget.month as string);
 
       const conflictingBudgets = await googleSheetsService.find(
         spreadsheetId,

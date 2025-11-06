@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { GoogleSheetsService } from '../../services/GoogleSheetsService';
 import { logger } from '../../utils/logger';
 import jwt from 'jsonwebtoken';
-import { z } from 'zod';
 import { authCallbackSchema } from './types';
 
 /**
@@ -28,14 +27,22 @@ export async function handleCallback(
 
     // Get or create user's Google Sheets database (persistent across logins)
     const spreadsheetId = await googleSheetsService.getOrCreateUserDatabase(
-      userInfo.email
+      userInfo.email,
+      userInfo.name
     );
+
+    // Get user data from database to include telegram fields
+    const userData = await googleSheetsService.find(spreadsheetId, 'users', {
+      email: userInfo.email,
+    });
+
+    // Get the first (and should be only) user record
+    const userRecord = userData[0];
 
     // Generate JWT token for our application
     const jwtSecret =
       process.env.JWT_SECRET ||
       'development-secret-key-change-in-production-supersecurekey123456789';
-    console.log('JWT Secret:', jwtSecret ? 'SET' : 'MISSING');
 
     if (!jwtSecret) {
       throw new Error('JWT_SECRET environment variable is not set');
@@ -45,6 +52,8 @@ export async function handleCallback(
       email: userInfo.email,
       name: userInfo.name,
       spreadsheetId,
+      telegram_username: userRecord?.telegram_username || '',
+      chatId: userRecord?.chatId || '',
       googleCredentials: credentials,
     };
 
@@ -64,41 +73,22 @@ export async function handleCallback(
       expiresIn: expiresInSeconds,
     });
 
-    // Store user session info (in production, use Redis or secure storage)
-    const userSession = {
-      email: userInfo.email,
-      name: userInfo.name,
-      spreadsheetId,
-      googleCredentials: credentials,
-      createdAt: new Date().toISOString(),
-    };
-
     logger.info(`User authenticated and database created: ${userInfo.email}`);
 
-    res.status(200).json({
-      success: true,
-      message: 'Authentication successful and database created',
-      user: {
-        email: userInfo.email,
-        name: userInfo.name,
-        spreadsheetId,
-      },
-      token: jwtToken,
-    });
+    // Redirect to frontend with token
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const callbackUrl = `${frontendUrl}/auth/callback?token=${encodeURIComponent(jwtToken)}`;
+
+    res.redirect(callbackUrl);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      res.status(400).json({
-        success: false,
-        message: 'Validation error',
-        errors: error.errors,
-      });
-      return;
-    }
+    // Redirect to frontend with error
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Authentication failed';
 
     logger.error('Error handling auth callback:', error);
-    res.status(400).json({
-      success: false,
-      message: error instanceof Error ? error.message : 'Authentication failed',
-    });
+
+    const errorUrl = `${frontendUrl}/auth/callback?error=${encodeURIComponent(errorMessage)}`;
+    res.redirect(errorUrl);
   }
 }

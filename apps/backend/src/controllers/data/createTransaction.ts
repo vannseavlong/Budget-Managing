@@ -40,8 +40,8 @@ export async function createTransaction(
     if (account) {
       const newBalance =
         validatedData.type === 'income'
-          ? parseFloat(account.balance) + validatedData.amount
-          : parseFloat(account.balance) - validatedData.amount;
+          ? parseFloat(account.balance as string) + validatedData.amount
+          : parseFloat(account.balance as string) - validatedData.amount;
 
       await googleSheetsService.update(
         spreadsheetId,
