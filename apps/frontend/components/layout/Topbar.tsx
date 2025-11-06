@@ -24,8 +24,13 @@ export function Topbar({ className, title }: TopbarProps) {
   const handleLogout = async () => {
     try {
       await logout();
+      // Force redirect to home page after logout
+      window.location.href = '/';
     } catch (error) {
       console.error('Logout failed:', error);
+      // Force local logout if there's an error
+      localStorage.clear();
+      window.location.href = '/';
     }
   };
 

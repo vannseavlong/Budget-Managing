@@ -23,7 +23,9 @@ if (!BOT_TOKEN) {
 if (!BOT_USERNAME) {
   console.error('❌ ERROR: TELEGRAM_BOT_USERNAME is required in .env file');
   console.log('\n📋 To fix this:');
-  console.log('1. Add to your .env file: TELEGRAM_BOT_USERNAME=your_bot_username');
+  console.log(
+    '1. Add to your .env file: TELEGRAM_BOT_USERNAME=your_bot_username'
+  );
   process.exit(1);
 }
 

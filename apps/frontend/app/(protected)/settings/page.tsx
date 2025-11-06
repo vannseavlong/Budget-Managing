@@ -6,6 +6,7 @@ import { useTheme } from '@/components/providers/theme-provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import TelegramConnectionCard from '@/components/common/TelegramConnectionCard';
 import Image from 'next/image';
 import {
   Link,
@@ -194,8 +195,8 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Telegram Account */}
-          <div className="flex items-center justify-between p-4 border rounded-lg">
+          {/* Telegram Account - See dedicated section below */}
+          <div className="flex items-center justify-between p-4 border rounded-lg bg-blue-50">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden">
                 <Image
@@ -209,54 +210,32 @@ export default function SettingsPage() {
               <div>
                 <h3 className="font-medium">Telegram</h3>
                 <p className="text-sm text-muted-foreground">
-                  {userProfile?.telegram_username
-                    ? userProfile.telegram_username
-                    : 'Not connected'}
+                  Configure in dedicated section below
                 </p>
               </div>
             </div>
-            {userProfile?.telegram_username ? (
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs">✓</span>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRefreshProfile}
-                  className="text-xs"
-                >
-                  Refresh
-                </Button>
-              </div>
-            ) : (
-              <Button
-                onClick={handleTelegramConnect}
-                size="sm"
-                className="bg-blue-500 hover:bg-blue-600 text-white"
-              >
-                Connect
-              </Button>
-            )}
+            <div className="text-blue-600 text-sm font-medium">↓ See Below</div>
           </div>
 
-          {/* Connection Instructions */}
-          {!userProfile?.telegram_username && (
-            <div className="p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
-              <div className="flex">
-                <Info className="h-5 w-5 text-blue-400 mt-0.5" />
-                <div className="ml-3">
-                  <p className="text-sm text-blue-700">
-                    <strong>Connect Telegram:</strong> Click &quot;Connect&quot;
-                    to open our Telegram bot, then click &quot;Start&quot; and
-                    follow the instructions to link your account.
-                  </p>
-                </div>
+          {/* Enhanced Telegram Configuration Note */}
+          <div className="p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
+            <div className="flex">
+              <Info className="h-5 w-5 text-blue-400 mt-0.5" />
+              <div className="ml-3">
+                <p className="text-sm text-blue-700">
+                  <strong>Enhanced Telegram Integration:</strong> Use the
+                  dedicated Telegram configuration section below for full
+                  connection management, notification settings, and bot
+                  interaction.
+                </p>
               </div>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
+
+      {/* Enhanced Telegram Integration */}
+      <TelegramConnectionCard />
 
       {/* Appearance */}
       <Card>

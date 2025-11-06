@@ -782,6 +782,85 @@ export class GoogleSheetsService {
   }
 
   /**
+   * Update user's Telegram information in the users table
+   */
+  async updateUserTelegramInfo(
+    userEmail: string,
+    telegramUsername: string,
+    chatId: string
+  ): Promise<void> {
+    try {
+      // Find the user's spreadsheet
+      const userSpreadsheetId = await this.findUserSpreadsheet(userEmail);
+
+      if (!userSpreadsheetId) {
+        logger.warn(`No spreadsheet found for user: ${userEmail}`);
+        return;
+      }
+
+      // Find the user record first
+      const users = await this.find(userSpreadsheetId, 'users');
+      const userRecord = users.find(
+        (user: DatabaseRecord) => user.email === userEmail
+      );
+
+      if (!userRecord) {
+        logger.warn(`User record not found for email: ${userEmail}`);
+        return;
+      }
+
+      // Update the user record with Telegram info
+      const updateData = {
+        telegram_username: telegramUsername,
+        chatId: chatId,
+        updated_at: new Date().toISOString(),
+      };
+
+      await this.update(
+        userSpreadsheetId,
+        'users',
+        userRecord.id as string,
+        updateData
+      );
+
+      logger.info('✅ User Telegram info updated in Google Sheets', {
+        userEmail,
+        telegramUsername,
+        chatId,
+      });
+    } catch (error) {
+      logger.error('❌ Error updating user Telegram info:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Find user's spreadsheet by email
+   */
+  private async findUserSpreadsheet(userEmail: string): Promise<string | null> {
+    try {
+      // This would typically search through available spreadsheets
+      // For now, we'll use a simple approach - check if there's a stored spreadsheet ID
+      // In a real implementation, you might store user-spreadsheet mappings in a separate service
+
+      // For development, we can use the current user's credentials to find their own spreadsheet
+      const userInfo = await this.getUserInfo();
+      if (userInfo.email === userEmail) {
+        // This is the current authenticated user, we can use their spreadsheet
+        return await this.getOrCreateUserDatabase(userEmail, userInfo.name);
+      }
+
+      logger.warn(
+        `Cannot find spreadsheet for user ${userEmail} - not the authenticated user`
+      );
+      return null;
+    } catch (error) {
+      logger.error('Error finding user spreadsheet:', error);
+      return null;
+    }
+  }
+
+  /**
    * Recreate database with updated schema for existing spreadsheet
    */
   async recreateDatabase(

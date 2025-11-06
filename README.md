@@ -12,6 +12,7 @@ A comprehensive, security-first budget management application built with modern 
 - **🔒 Privacy-First**: No centralized database - your data stays in your Google Drive
 - **🚀 Easy Setup**: No database configuration required
 - **📈 Rich Analytics**: Visual charts and budget tracking with Recharts
+- **🤖 Telegram Integration**: Bot notifications for budget alerts and quick expense logging
 
 ## 🏗️ Architecture
 
@@ -283,6 +284,7 @@ npm run test --workspace=apps/frontend
 - [API Documentation](docs/api/README.md)
 - [Google Sheets Integration](docs/GOOGLE_SHEETS_SETUP.md)
 - [Google Sheets API Reference](docs/api/GOOGLE_SHEETS_API.md)
+- [🤖 Telegram Bot Integration](docs/TELEGRAM_INTEGRATION_SETUP.md)
 - [Frontend Components](docs/frontend/README.md)
 - [Security Policy](SECURITY.md)
 - [Contributing Guidelines](CONTRIBUTING.md)

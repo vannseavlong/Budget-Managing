@@ -1,0 +1,232 @@
+{
+  "info": {
+    "name": "Budget Manager API - Updated Endpoints",
+    "description": "New and updated endpoints for Budget Manager API - November 2025",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "ngrokUrl",
+      "value": "https://your-ngrok-url.ngrok-free.app",
+      "type": "string",
+      "description": "Replace with your actual ngrok URL"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT token for authenticated endpoints"
+    }
+  ],
+  "item": [
+    {
+      "name": "🏠 Root Endpoint (NEW)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{ngrokUrl}}/",
+          "host": ["{{ngrokUrl}}"],
+          "path": [""]
+        },
+        "description": "New root endpoint that shows API status and available endpoints. Useful for testing ngrok tunnel connectivity."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ngrokUrl}}/",
+              "host": ["{{ngrokUrl}}"],
+              "path": [""]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Budget Managing API is running!\",\n  \"endpoints\": {\n    \"health\": \"/health\",\n    \"telegram_webhook\": \"/api/v1/telegram/webhook\",\n    \"api_docs\": \"/api/v1/docs\"\n  },\n  \"timestamp\": \"2025-11-06T10:00:00.000Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "💚 Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{ngrokUrl}}/health",
+          "host": ["{{ngrokUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Health check endpoint to verify API is running"
+      },
+      "response": [
+        {
+          "name": "Health Check Response",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ngrokUrl}}/health",
+              "host": ["{{ngrokUrl}}"],
+              "path": ["health"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"status\": \"OK\",\n  \"timestamp\": \"2025-11-06T10:00:00.000Z\",\n  \"uptime\": 1234.567,\n  \"version\": \"1.0.0\",\n  \"message\": \"Budget Managing API with Google Sheets integration\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "🤖 Telegram Webhook (FIXED)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"update_id\": 123456789,\n  \"message\": {\n    \"message_id\": 1,\n    \"from\": {\n      \"id\": 987654321,\n      \"is_bot\": false,\n      \"first_name\": \"Test\",\n      \"username\": \"testuser\"\n    },\n    \"chat\": {\n      \"id\": 987654321,\n      \"first_name\": \"Test\",\n      \"username\": \"testuser\",\n      \"type\": \"private\"\n    },\n    \"date\": 1699272000,\n    \"text\": \"/start\"\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{ngrokUrl}}/api/v1/telegram/webhook",
+          "host": ["{{ngrokUrl}}"],
+          "path": ["api", "v1", "telegram", "webhook"]
+        },
+        "description": "FIXED: Webhook endpoint for Telegram Bot API. No authentication required (this was the main issue!). This endpoint receives updates from Telegram when users interact with your bot."
+      },
+      "response": [
+        {
+          "name": "Webhook Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"update_id\": 123456789,\n  \"message\": {\n    \"message_id\": 1,\n    \"from\": {\n      \"id\": 987654321,\n      \"is_bot\": false,\n      \"first_name\": \"Test\",\n      \"username\": \"testuser\"\n    },\n    \"chat\": {\n      \"id\": 987654321,\n      \"first_name\": \"Test\",\n      \"username\": \"testuser\",\n      \"type\": \"private\"\n    },\n    \"date\": 1699272000,\n    \"text\": \"/start\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{ngrokUrl}}/api/v1/telegram/webhook",
+              "host": ["{{ngrokUrl}}"],
+              "path": ["api", "v1", "telegram", "webhook"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"success\": true\n}"
+        }
+      ]
+    },
+    {
+      "name": "🔧 Test Telegram Connection",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/telegram/test",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "telegram", "test"]
+        },
+        "description": "Test endpoint to verify Telegram bot connection. Requires authentication."
+      },
+      "response": [
+        {
+          "name": "Test Connection Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/telegram/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "telegram", "test"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Telegram bot connection test successful\"\n}"
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Pre-request script for common setup",
+          "console.log('Testing Budget Manager API - Updated Endpoints');"
+        ]
+      }
+    }
+  ]
+}

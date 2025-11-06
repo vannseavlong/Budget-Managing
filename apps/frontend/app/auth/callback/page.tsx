@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authService } from '@/lib/auth-service';
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>(
@@ -28,7 +28,7 @@ export default function AuthCallbackPage() {
           // If no token, try to handle OAuth callback with code
           const code = searchParams.get('code');
           const state = searchParams.get('state');
-          
+
           if (!code) {
             throw new Error('No authentication token or code found');
           }
@@ -38,7 +38,7 @@ export default function AuthCallbackPage() {
         } else {
           // If we have a token directly (from backend redirect), store it
           authService.setToken(decodeURIComponent(token));
-          
+
           // Get user info to update auth state
           const user = await authService.getCurrentUser();
           if (!user) {
@@ -140,5 +140,19 @@ export default function AuthCallbackPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          Loading...
+        </div>
+      }
+    >
+      <AuthCallbackContent />
+    </Suspense>
   );
 }

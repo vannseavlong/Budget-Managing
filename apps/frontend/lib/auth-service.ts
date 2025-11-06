@@ -96,11 +96,19 @@ class AuthService {
    */
   async logout(): Promise<void> {
     try {
-      await httpClient.post(API_ENDPOINTS.AUTH.LOGOUT);
+      // Only attempt backend logout if we have a valid token
+      const token = this.getToken();
+      if (token) {
+        await httpClient.post(API_ENDPOINTS.AUTH.LOGOUT);
+      }
     } catch (error) {
-      console.error('Logout request failed:', error);
+      console.warn(
+        'Backend logout failed, continuing with local logout:',
+        error
+      );
       // Continue with local logout even if server request fails
     } finally {
+      // Always clear local auth data regardless of backend response
       this.clearAuthData();
     }
   }

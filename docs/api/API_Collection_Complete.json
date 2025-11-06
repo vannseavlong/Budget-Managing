@@ -1,14 +1,19 @@
 {
   "info": {
-    "name": "Budget Manager API Collection",
+    "name": "Budget Manager API Collection (Updated Nov 2025)",
     "_postman_id": "budget-manager-api-collection",
-    "description": "Complete Postman collection for Budget Manager with Google Sheets integration. Set up environment variables: {{baseUrl}} = http://localhost:3001 and {{token}} = your-jwt-token",
+    "description": "Complete Postman collection for Budget Manager with Google Sheets integration. UPDATED: Fixed Telegram webhook authentication, added root endpoint for ngrok testing. Set up environment variables: {{baseUrl}} = http://localhost:3001, {{ngrokUrl}} = your-ngrok-tunnel-url, and {{token}} = your-jwt-token",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
       "value": "http://localhost:3001"
+    },
+    {
+      "key": "ngrokUrl",
+      "value": "https://your-ngrok-url.ngrok-free.app",
+      "description": "Replace with your actual ngrok URL from setup script"
     },
     {
       "key": "token",
@@ -32,6 +37,44 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "1b. Root Endpoint (NEW - Ngrok Test)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ngrokUrl}}/",
+              "host": ["{{ngrokUrl}}"],
+              "path": [""]
+            },
+            "description": "NEW: Test ngrok tunnel connectivity and see API endpoints"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{ngrokUrl}}/",
+                  "host": ["{{ngrokUrl}}"],
+                  "path": [""]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Budget Managing API is running!\",\n  \"endpoints\": {\n    \"health\": \"/health\",\n    \"telegram_webhook\": \"/api/v1/telegram/webhook\",\n    \"api_docs\": \"/api/v1/docs\"\n  },\n  \"timestamp\": \"2025-11-06T10:00:00.000Z\"\n}"
+            }
+          ]
         },
         {
           "name": "2. Initiate Google OAuth",
@@ -922,7 +965,7 @@
           "response": []
         },
         {
-          "name": "Telegram Webhook (For Bot)",
+          "name": "Telegram Webhook (FIXED - No Auth Required)",
           "request": {
             "method": "POST",
             "header": [
@@ -933,15 +976,49 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"update_id\": 123456,\n  \"message\": {\n    \"message_id\": 1,\n    \"from\": {\n      \"id\": 123456789,\n      \"is_bot\": false,\n      \"first_name\": \"User\",\n      \"username\": \"username\"\n    },\n    \"chat\": {\n      \"id\": 123456789,\n      \"first_name\": \"User\",\n      \"username\": \"username\",\n      \"type\": \"private\"\n    },\n    \"date\": 1699123456,\n    \"text\": \"/balance\"\n  }\n}"
+              "raw": "{\n  \"update_id\": 123456,\n  \"message\": {\n    \"message_id\": 1,\n    \"from\": {\n      \"id\": 123456789,\n      \"is_bot\": false,\n      \"first_name\": \"User\",\n      \"username\": \"username\"\n    },\n    \"chat\": {\n      \"id\": 123456789,\n      \"first_name\": \"User\",\n      \"username\": \"username\",\n      \"type\": \"private\"\n    },\n    \"date\": 1699123456,\n    \"text\": \"/start\"\n  }\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/v1/telegram/webhook",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{ngrokUrl}}/api/v1/telegram/webhook",
+              "host": ["{{ngrokUrl}}"],
               "path": ["api", "v1", "telegram", "webhook"]
-            }
+            },
+            "description": "FIXED: No authentication required! This was the main issue - now uses ngrok URL directly."
           },
-          "response": []
+          "response": [
+            {
+              "name": "Webhook Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"update_id\": 123456,\n  \"message\": {\n    \"message_id\": 1,\n    \"from\": {\n      \"id\": 123456789,\n      \"is_bot\": false,\n      \"first_name\": \"User\",\n      \"username\": \"username\"\n    },\n    \"chat\": {\n      \"id\": 123456789,\n      \"first_name\": \"User\",\n      \"username\": \"username\",\n      \"type\": \"private\"\n    },\n    \"date\": 1699123456,\n    \"text\": \"/start\"\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{ngrokUrl}}/api/v1/telegram/webhook",
+                  "host": ["{{ngrokUrl}}"],
+                  "path": ["api", "v1", "telegram", "webhook"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true\n}"
+            }
+          ]
         },
         {
           "name": "Test Connection",
