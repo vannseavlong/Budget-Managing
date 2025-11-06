@@ -1,3 +1,6 @@
+import typescriptEslint from '@typescript-eslint/eslint-plugin';
+import typescriptParser from '@typescript-eslint/parser';
+
 const eslintConfig = [
   {
     ignores: ['.next/**', 'out/**', 'build/**', 'node_modules/**'],
@@ -7,9 +10,20 @@ const eslintConfig = [
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
+      parser: typescriptParser,
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+        project: './tsconfig.json',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': typescriptEslint,
     },
     rules: {
-      'no-unused-vars': 'warn',
+      'no-unused-vars': 'off', // Turn off base rule
+      '@typescript-eslint/no-unused-vars': 'warn',
       'no-console': 'off',
     },
   },

@@ -36,7 +36,9 @@ if (!BOT_USERNAME) {
 
 if (!WEBHOOK_URL) {
   console.error('❌ ERROR: TELEGRAM_WEBHOOK_URL is required in .env file');
-  console.log('\n📋 Note: Use setup-telegram-ngrok.js for automatic URL generation');
+  console.log(
+    '\n📋 Note: Use setup-telegram-ngrok.js for automatic URL generation'
+  );
   process.exit(1);
 }
 

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 
 interface SidebarProps {
   className?: string;
@@ -74,8 +75,13 @@ export function Sidebar({ className }: SidebarProps) {
   const handleLogout = async () => {
     try {
       await logout();
+      // Force redirect to home page after logout
+      window.location.href = '/';
     } catch (error) {
       console.error('Logout failed:', error);
+      // Force local logout if there's an error
+      localStorage.clear();
+      window.location.href = '/';
     }
   };
 
@@ -86,12 +92,16 @@ export function Sidebar({ className }: SidebarProps) {
       {/* Header / Brand */}
       <div className="flex h-16 items-center px-6">
         <div className="flex items-center space-x-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900">
-            <Wallet className="h-5 w-5 text-white" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden bg-white">
+            <Image
+              src="/images/MMS-Logo.png"
+              alt="MMS Logo"
+              width={32}
+              height={32}
+              className="h-8 w-8 object-contain"
+            />
           </div>
-          <span className="text-lg font-semibold text-slate-900">
-            Money Manager
-          </span>
+          <span className="text-lg font-semibold text-slate-900">MMS</span>
         </div>
       </div>
 
@@ -142,7 +152,6 @@ export function Sidebar({ className }: SidebarProps) {
             <p className="text-xs text-slate-500 truncate">
               {user?.email || 'demo@example.com'}
             </p>
-            <p className="text-xs text-blue-600 font-medium">@SNLRLONG</p>
           </div>
         </div>
 

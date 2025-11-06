@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useProtectedRoute } from '@/hooks/useProtectedRoute';
 import { DashboardHeroCard } from '@/components/common/DashboardHeroCard';
 import { DashboardStatCard } from '@/components/common/DashboardStatCard';
 import { DashboardChartCard } from '@/components/common/DashboardChartCard';
@@ -18,6 +19,7 @@ import { Button } from '@/components/ui/button';
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { isLoading } = useProtectedRoute();
 
   // Month selection state
   const months = [
@@ -54,6 +56,15 @@ export default function DashboardPage() {
     { month: 'Sep', amount: 780 },
     { month: 'Oct', amount: 150 },
   ];
+
+  // Show loading while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div>Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 space-y-6">
