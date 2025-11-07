@@ -128,9 +128,10 @@ export class GoogleSheetsService {
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
     const redirectUri =
       process.env.GOOGLE_REDIRECT_URI ||
-      'http://localhost:3001/api/v1/auth/google/callback';
+      `${backendUrl}/api/v1/auth/google/callback`;
 
     if (!clientId || !clientSecret) {
       throw new Error(
