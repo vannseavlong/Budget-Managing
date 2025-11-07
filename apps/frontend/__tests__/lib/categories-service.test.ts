@@ -38,7 +38,7 @@ describe('CategoriesService', () => {
         {
           id: '1',
           name: 'Food',
-          color: '#FF6B6B',
+          emoji: '🍔',
           userId: 'user1',
           createdAt: '2023-01-01T00:00:00Z',
           updatedAt: '2023-01-01T00:00:00Z',
@@ -110,7 +110,7 @@ describe('CategoriesService', () => {
       const mockCategory = {
         id: '1',
         name: 'Food',
-        color: '#FF6B6B',
+        emoji: '🍔',
         userId: 'user1',
         createdAt: '2023-01-01T00:00:00Z',
         updatedAt: '2023-01-01T00:00:00Z',
@@ -149,14 +149,14 @@ describe('CategoriesService', () => {
   describe('createCategory', () => {
     const validPayload: CreateCategoryRequest = {
       name: 'Food',
-      color: '#FF6B6B',
+      emoji: '🍔',
     };
 
     it('should create a category successfully', async () => {
       const mockCreatedCategory = {
         id: '1',
         name: 'Food',
-        color: '#FF6B6B',
+        emoji: '🍔',
         userId: 'user1',
         createdAt: '2023-01-01T00:00:00Z',
         updatedAt: '2023-01-01T00:00:00Z',
@@ -182,7 +182,7 @@ describe('CategoriesService', () => {
     it('should validate payload before sending', async () => {
       const invalidPayload: CreateCategoryRequest = {
         name: '',
-        color: '#FF6B6B',
+        emoji: '🍔',
       };
 
       await expect(
@@ -195,12 +195,12 @@ describe('CategoriesService', () => {
     it('should validate color format', async () => {
       const invalidPayload: CreateCategoryRequest = {
         name: 'Food',
-        color: 'invalid-color',
+        emoji: 'invalid-emoji',
       };
 
       await expect(
         CategoriesService.createCategory(invalidPayload)
-      ).rejects.toThrow('Valid color in hex format is required');
+      ).rejects.toThrow('Invalid emoji format');
 
       expect(mockedHttpClient.post).not.toHaveBeenCalled();
     });
@@ -209,14 +209,14 @@ describe('CategoriesService', () => {
   describe('updateCategory', () => {
     const validPayload: UpdateCategoryRequest = {
       name: 'Updated Food',
-      color: '#4ECDC4',
+      emoji: '🟢',
     };
 
     it('should update a category successfully', async () => {
       const mockUpdatedCategory = {
         id: '1',
         name: 'Updated Food',
-        color: '#4ECDC4',
+        emoji: '🟢',
         userId: 'user1',
         createdAt: '2023-01-01T00:00:00Z',
         updatedAt: '2023-01-02T00:00:00Z',
@@ -283,10 +283,12 @@ describe('CategoriesService', () => {
   });
 
   describe('Utility functions', () => {
-    describe('getRandomColor', () => {
-      it('should return a valid hex color', () => {
-        const color = CategoriesService.getRandomColor();
-        expect(color).toMatch(/^#[0-9A-F]{6}$/i);
+    describe('getRandomEmoji', () => {
+      it('should return a valid emoji', () => {
+        const emoji = CategoriesService.getRandomEmoji();
+        // emoji should be a non-empty string (basic sanity check)
+        expect(typeof emoji).toBe('string');
+        expect(emoji.length).toBeGreaterThan(0);
       });
     });
 
@@ -295,7 +297,7 @@ describe('CategoriesService', () => {
         {
           id: '1',
           name: 'Food',
-          color: '#FF6B6B',
+          emoji: '🍔',
           userId: 'user1',
           createdAt: '2023-01-01T00:00:00Z',
           updatedAt: '2023-01-01T00:00:00Z',
@@ -303,7 +305,7 @@ describe('CategoriesService', () => {
         {
           id: '2',
           name: 'Transport',
-          color: '#4ECDC4',
+          emoji: '🚌',
           userId: 'user1',
           createdAt: '2023-01-01T00:00:00Z',
           updatedAt: '2023-01-01T00:00:00Z',

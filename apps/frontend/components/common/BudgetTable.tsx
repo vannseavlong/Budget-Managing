@@ -29,6 +29,7 @@ interface BudgetItem {
   id: string;
   name: string;
   cost: number;
+  spent: number;
   status: 'Spent' | 'Not Yet';
 }
 
@@ -105,20 +106,23 @@ export function BudgetTable({
               <h3 className="font-medium">{item.name}</h3>
               <ActionDropdown item={item} />
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-semibold">${item.cost}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onToggleStatus(item.id)}
-                className={`text-xs px-3 py-1 ${
-                  item.status === 'Spent'
-                    ? 'bg-gray-900 text-white hover:bg-gray-800'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {item.status}
-              </Button>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-lg font-semibold">${item.cost}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onToggleStatus(item.id)}
+                  className={`text-xs px-3 py-1 ${
+                    item.status === 'Spent'
+                      ? 'bg-gray-900 text-white hover:bg-gray-800'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {item.status}
+                </Button>
+              </div>
+              <div className="text-sm text-gray-600">Spent: ${item.spent}</div>
             </div>
           </div>
         ))}
@@ -132,6 +136,7 @@ export function BudgetTable({
               <TableRow>
                 <TableHead>Item Name</TableHead>
                 <TableHead>Cost</TableHead>
+                <TableHead>Spent</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -142,6 +147,7 @@ export function BudgetTable({
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.name}</TableCell>
                     <TableCell>${item.cost}</TableCell>
+                    <TableCell>${item.spent}</TableCell>
                     <TableCell>
                       <Button
                         variant="outline"
@@ -163,7 +169,7 @@ export function BudgetTable({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     No budget items found.
                   </TableCell>
                 </TableRow>

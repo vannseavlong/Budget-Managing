@@ -17,7 +17,7 @@ const mockCategories: Category[] = [
   {
     id: '1',
     name: 'Food',
-    color: '#FF6B6B',
+    emoji: '🍔',
     userId: 'user1',
     createdAt: '2023-01-01T00:00:00Z',
     updatedAt: '2023-01-01T00:00:00Z',
@@ -25,7 +25,7 @@ const mockCategories: Category[] = [
   {
     id: '2',
     name: 'Transport',
-    color: '#4ECDC4',
+    emoji: '🚌',
     userId: 'user1',
     createdAt: '2023-01-01T00:00:00Z',
     updatedAt: '2023-01-01T00:00:00Z',
@@ -121,13 +121,13 @@ describe('useCategories', () => {
   describe('createCategory', () => {
     const newCategoryPayload: CreateCategoryRequest = {
       name: 'Shopping',
-      color: '#45B7D1',
+      emoji: '🛍️',
     };
 
     const newCategory: Category = {
       id: '3',
       name: 'Shopping',
-      color: '#45B7D1',
+      emoji: '🛍️',
       userId: 'user1',
       createdAt: '2023-01-02T00:00:00Z',
       updatedAt: '2023-01-02T00:00:00Z',

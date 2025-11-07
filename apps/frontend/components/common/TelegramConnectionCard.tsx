@@ -149,15 +149,35 @@ export function TelegramConnectionCard() {
     }
   };
 
-  const handleDisconnect = () => {
+  const handleDisconnect = async () => {
     if (
       confirm(
         'Are you sure you want to disconnect from Telegram? You will lose access to bot notifications.'
       )
     ) {
-      disconnect();
-      setConnectionData(null);
-      // TODO: Call backend API to remove connection
+      try {
+        const token = localStorage.getItem('auth_token');
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+        const response = await fetch(`${apiUrl}/api/v1/telegram/disconnect`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          disconnect(); // Clear from localStorage (if any)
+          setConnectionData(null);
+          console.log('✅ Telegram disconnected successfully');
+        } else {
+          console.error('❌ Failed to disconnect from backend');
+        }
+      } catch (error) {
+        console.error('Error disconnecting from Telegram:', error);
+      }
     }
   };
 

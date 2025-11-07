@@ -22,6 +22,13 @@ export const API_ENDPOINTS = {
     GET: (id: string) => `${API_BASE_URL}/api/v1/budgets/${id}`,
     UPDATE: (id: string) => `${API_BASE_URL}/api/v1/budgets/${id}`,
     DELETE: (id: string) => `${API_BASE_URL}/api/v1/budgets/${id}`,
+    ITEMS: `${API_BASE_URL}/api/v1/budgets/items`,
+    INCOMES: `${API_BASE_URL}/api/v1/budgets/incomes`,
+    INCOMES_UPDATE: (id: string) =>
+      `${API_BASE_URL}/api/v1/budgets/incomes/${id}`,
+    INCOMES_DELETE: (id: string) =>
+      `${API_BASE_URL}/api/v1/budgets/incomes/${id}`,
+    INCOMES_SUM: `${API_BASE_URL}/api/v1/budgets/incomes/sum`,
   },
 
   // Categories endpoints

@@ -11,6 +11,7 @@ import {
   connectTelegram,
   getConnectionStatus,
   debugConnections,
+  disconnectTelegram,
 } from '../controllers/telegram';
 import { TelegramConnectionStore } from '../utils/TelegramConnectionStore';
 
@@ -272,6 +273,22 @@ router.post('/connect', connectTelegram);
  *         description: Unauthorized
  */
 router.get('/status', getConnectionStatus);
+
+/**
+ * @swagger
+ * /api/v1/telegram/disconnect:
+ *   post:
+ *     summary: Disconnect Telegram account from user
+ *     tags: [Telegram]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Telegram disconnected successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.post('/disconnect', disconnectTelegram);
 
 /**
  * @swagger
