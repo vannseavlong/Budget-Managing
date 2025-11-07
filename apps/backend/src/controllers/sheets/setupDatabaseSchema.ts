@@ -31,6 +31,7 @@ export async function setupDatabaseSchema(
         'transactions',
         'budgets',
         'budget_items',
+        'budget_incomes',
         'goals',
         'telegram_messages',
       ],

@@ -37,6 +37,92 @@ export class GoogleSheetsService {
     // This prevents startup errors when credentials are not available
   }
 
+  /**
+   * Ensure a table (sheet) exists with given name and headers. If missing, create it and add headers/formatting.
+   */
+  async ensureTableExists(
+    spreadsheetId: string,
+    table: { name: string; columns: string[] }
+  ) {
+    try {
+      const sheets = google.sheets({
+        version: 'v4',
+        auth: this.getAuthenticatedClient(),
+      });
+      const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
+      const existing =
+        spreadsheet.data.sheets?.map((s) => s.properties?.title) || [];
+      if (!existing.includes(table.name)) {
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId,
+          requestBody: {
+            requests: [
+              {
+                addSheet: {
+                  properties: {
+                    title: table.name,
+                    gridProperties: {
+                      rowCount: 1000,
+                      columnCount: table.columns.length,
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        });
+      }
+
+      // Set headers row
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${table.name}!A1:${String.fromCharCode(64 + table.columns.length)}1`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [table.columns] },
+      });
+
+      // Apply bold header formatting and freeze row
+      const sheetInfo = await sheets.spreadsheets.get({ spreadsheetId });
+      const sheetId = sheetInfo.data.sheets?.find(
+        (s) => s.properties?.title === table.name
+      )?.properties?.sheetId;
+      if (sheetId !== undefined) {
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId,
+          requestBody: {
+            requests: [
+              {
+                repeatCell: {
+                  range: {
+                    sheetId,
+                    startRowIndex: 0,
+                    endRowIndex: 1,
+                    startColumnIndex: 0,
+                    endColumnIndex: table.columns.length,
+                  },
+                  cell: { userEnteredFormat: { textFormat: { bold: true } } },
+                  fields: 'userEnteredFormat.textFormat.bold',
+                },
+              },
+              {
+                updateSheetProperties: {
+                  properties: {
+                    sheetId,
+                    gridProperties: { frozenRowCount: 1 },
+                  },
+                  fields: 'gridProperties.frozenRowCount',
+                },
+              },
+            ],
+          },
+        });
+      }
+    } catch (error) {
+      logger.error(`Error ensuring table ${table.name} exists:`, error);
+      throw error;
+    }
+  }
+
   private initializeIfNeeded(): void {
     if (this.isInitialized) return;
 
@@ -274,6 +360,27 @@ export class GoogleSheetsService {
             'year',
             'month',
             'income',
+            'created_at',
+            'updated_at',
+          ],
+          primaryKey: 'id',
+          foreignKeys: [
+            {
+              column: 'user_id',
+              referencedTable: 'users',
+              referencedColumn: 'id',
+            },
+          ],
+        },
+        {
+          name: 'budget_incomes',
+          columns: [
+            'id',
+            'user_id',
+            'year',
+            'month',
+            'amount',
+            'source',
             'created_at',
             'updated_at',
           ],
@@ -1150,6 +1257,27 @@ export class GoogleSheetsService {
             },
           ],
         },
+        {
+          name: 'budget_incomes',
+          columns: [
+            'id',
+            'user_id',
+            'year',
+            'month',
+            'amount',
+            'source',
+            'created_at',
+            'updated_at',
+          ],
+          primaryKey: 'id',
+          foreignKeys: [
+            {
+              column: 'user_id',
+              referencedTable: 'users',
+              referencedColumn: 'id',
+            },
+          ],
+        },
       ];
 
       // Setup the users sheet (already exists, just add headers and formatting)
@@ -1324,6 +1452,16 @@ export class GoogleSheetsService {
           'sent_at',
           'created_at',
         ],
+        budget_incomes: [
+          'id',
+          'user_id',
+          'year',
+          'month',
+          'amount',
+          'source',
+          'created_at',
+          'updated_at',
+        ],
       };
 
       // Get current spreadsheet info
@@ -1448,6 +1586,7 @@ export class GoogleSheetsService {
         'transactions',
         'budgets',
         'budget_items',
+        'budget_incomes',
         'goals',
         'telegram_messages',
       ];
