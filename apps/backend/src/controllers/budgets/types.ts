@@ -13,6 +13,16 @@ export const updateBudgetSchema = z.object({
   income: z.number().nonnegative('Income must be non-negative').optional(),
 });
 
+// Validation schema for creating income entries (multiple sources per month)
+export const createIncomeSchema = z.object({
+  year: z.number().int().min(2000).max(3000),
+  month: z.number().int().min(1).max(12),
+  amount: z.number().nonnegative('Amount must be non-negative'),
+  source: z.string().optional(),
+});
+
+export type CreateIncomeRequest = z.infer<typeof createIncomeSchema>;
+
 // Validation schemas for budget items
 export const createBudgetItemSchema = z.object({
   budget_id: z.string().min(1, 'Budget ID is required'),

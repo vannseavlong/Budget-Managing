@@ -44,10 +44,10 @@ app.use(
   })
 );
 
-// Rate limiting
+// Rate limiting - More permissive for development
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 1000, // Increased limit for development - limit each IP to 1000 requests per windowMs
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -91,6 +91,20 @@ app.use('/api/v1/goals', goalsRoutes);
 app.use('/api/v1/settings', settingsRoutes);
 app.use('/api/v1/telegram', telegramRoutes);
 app.use('/api/v1/sheets', sheetsRoutes);
+
+// Root endpoint for ngrok tunnel verification
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Budget Managing API is running!',
+    endpoints: {
+      health: '/health',
+      telegram_webhook: '/api/v1/telegram/webhook',
+      api_docs: '/api/v1/docs',
+    },
+    timestamp: new Date().toISOString(),
+  });
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {

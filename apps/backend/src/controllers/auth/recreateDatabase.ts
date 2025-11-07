@@ -28,7 +28,11 @@ export async function recreateDatabase(
     googleSheetsService.setCredentials(user.googleCredentials);
 
     // Recreate the database with updated schema
-    await googleSheetsService.recreateDatabase(user.spreadsheetId, user.email);
+    await googleSheetsService.recreateDatabase(
+      user.spreadsheetId,
+      user.email,
+      user.name
+    );
 
     res.status(200).json({
       success: true,

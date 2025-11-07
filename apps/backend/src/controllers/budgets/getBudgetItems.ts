@@ -25,6 +25,11 @@ export async function getBudgetItems(
       budgetId
     );
 
+    // Debug log: show budget lookup result
+    logger.info(
+      `getBudgetItems: looked up budgetId=${budgetId} -> ${budget ? 'FOUND' : 'NOT_FOUND'}`
+    );
+
     if (!budget || budget.user_id !== authenticatedReq.user!.email) {
       res.status(404).json({
         success: false,
@@ -33,14 +38,19 @@ export async function getBudgetItems(
       return;
     }
 
-    // Get all budget items for this budget
+    // Get all budget items for this budget (filter by budget_id only).
+    // budget_items sheet does not include user_id column, so don't filter by user_id.
     const budgetItems = await googleSheetsService.find(
       spreadsheetId,
       'budget_items',
       {
-        user_id: authenticatedReq.user!.email,
         budget_id: budgetId,
       }
+    );
+
+    // Debug log: number of items found
+    logger.info(
+      `getBudgetItems: budgetId=${budgetId} found ${budgetItems.length} budget_items`
     );
 
     // Sort by category name

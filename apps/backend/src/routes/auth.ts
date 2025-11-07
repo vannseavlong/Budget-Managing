@@ -5,6 +5,7 @@ import {
   handleCallback,
   refreshToken,
   getProfile,
+  updateProfile,
   validateDatabase,
   recreateDatabase,
   logout,
@@ -19,6 +20,7 @@ router.post('/refresh', refreshToken);
 
 // Protected routes
 router.get('/profile', authenticateToken, getProfile);
+router.put('/profile', authenticateToken, updateProfile);
 router.get('/validate-database', authenticateToken, validateDatabase);
 router.post('/recreate-database', authenticateToken, recreateDatabase);
 router.post('/logout', authenticateToken, logout);

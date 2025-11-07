@@ -7,6 +7,8 @@ export interface AuthenticatedRequest extends Request {
     email: string;
     name: string;
     spreadsheetId: string;
+    telegram_username?: string;
+    chatId?: string;
     googleCredentials: any;
   };
 }

@@ -5,6 +5,7 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  migrateCategoriesEmoji,
 } from '../controllers/categories';
 
 const router = express.Router();
@@ -122,5 +123,21 @@ router.put('/:id', updateCategory);
  *         description: Category not found
  */
 router.delete('/:id', deleteCategory);
+
+/**
+ * @swagger
+ * /api/v1/categories/migrate-emojis:
+ *   post:
+ *     summary: Migrate categories to include emoji field (one-time migration)
+ *     tags: [Categories]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Migration completed successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.post('/migrate-emojis', migrateCategoriesEmoji);
 
 export default router;

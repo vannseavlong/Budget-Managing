@@ -3,6 +3,7 @@ export { initiateAuth } from './initiateAuth';
 export { handleCallback } from './handleCallback';
 export { refreshToken } from './refreshToken';
 export { getProfile } from './getProfile';
+export { updateProfile } from './updateProfile';
 export { validateDatabase } from './validateDatabase';
 export { logout } from './logout';
 export { recreateDatabase } from './recreateDatabase';

@@ -21,6 +21,9 @@ export async function createCategory(
     const googleSheetsService = new GoogleSheetsService();
     googleSheetsService.setCredentials(googleCredentials);
 
+    // Ensure categories sheet has emoji column before inserting
+    await googleSheetsService.ensureCategoriesSchema(spreadsheetId);
+
     // Check if category with same name already exists for this user
     const existingCategories = await googleSheetsService.find(
       spreadsheetId,
@@ -43,7 +46,8 @@ export async function createCategory(
     const newCategory = {
       id: uuidv4(),
       name: validatedData.name,
-      color: validatedData.color,
+      emoji: validatedData.emoji,
+      color: validatedData.color, // Keep color for backward compatibility
       user_id: authenticatedReq.user!.email,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

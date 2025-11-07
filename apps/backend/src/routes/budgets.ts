@@ -6,6 +6,7 @@ import {
   updateBudget,
   deleteBudget,
   getBudgetItems,
+  getAllBudgetItems,
   createBudgetItem,
   updateBudgetItem,
   deleteBudgetItem,
@@ -42,6 +43,11 @@ router.use(authenticateToken);
  *         description: Unauthorized
  */
 router.get('/', getBudgets);
+
+// Backwards-compatible alias: /monthly -> same as GET / (with year & month query params)
+router.get('/monthly', getBudgets);
+// GET /api/v1/budgets/items - list budget items for user (optional ?budget_id=...)
+router.get('/items', getAllBudgetItems);
 
 /**
  * @swagger

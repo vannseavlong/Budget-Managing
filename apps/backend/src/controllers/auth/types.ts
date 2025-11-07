@@ -22,6 +22,8 @@ export interface AuthResponse {
     email: string;
     name?: string;
     picture?: string;
+    telegram_username?: string;
+    chatId?: string;
   };
   spreadsheetId?: string;
   message: string;
@@ -33,6 +35,8 @@ export interface ProfileResponse {
     email: string;
     name?: string;
     picture?: string;
+    telegram_username?: string;
+    chatId?: string;
     spreadsheetId: string;
   };
   message: string;
