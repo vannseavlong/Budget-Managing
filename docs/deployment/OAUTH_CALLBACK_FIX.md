@@ -1,14 +1,37 @@
 # 🔧 OAuth Callback Troubleshooting
 
-## Problem: Vercel app redirects to localhost after Google login
+## Problem: Login redirects to localhost instead of production URL
 
-This happens when the backend OAuth redirect URI is not properly configured.
+This happens when environment variables are not properly configured on Render.
 
 ---
 
 ## ✅ Solution
 
-### Step 1: Add `BACKEND_URL` to Render Environment Variables
+### **Critical Environment Variables for Render**
+
+You MUST set these in Render dashboard for OAuth to work:
+
+1. **`BACKEND_URL`** - Your Render backend URL
+   ```
+   BACKEND_URL=https://budget-manager-backend-5uis.onrender.com
+   ```
+
+2. **`FRONTEND_URL`** - Your Vercel frontend URL
+   ```
+   FRONTEND_URL=https://budget-managing-frontend.vercel.app
+   ```
+
+3. **`ALLOWED_ORIGINS`** - CORS origins
+   ```
+   ALLOWED_ORIGINS=https://budget-managing-frontend.vercel.app
+   ```
+
+**Without these, the backend will use localhost fallbacks!**
+
+---
+
+## 🚀 Step-by-Step Fix
 
 1. Go to your Render dashboard
 2. Select your backend service
