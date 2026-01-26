@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { deleteIncomeService } from '../../services/googleSheets/endpoints/budgets/deleteIncomeService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -12,7 +12,7 @@ export async function deleteIncome(req: Request, res: Response) {
     const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
     const { id } = req.params;
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = deleteIncomeService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Ensure the incomes table exists

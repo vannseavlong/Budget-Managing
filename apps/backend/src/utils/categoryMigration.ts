@@ -3,11 +3,10 @@
  * Helps migrate existing categories from color-only to emoji+color format
  */
 
-import {
-  GoogleSheetsService,
-  UserCredentials,
-} from '../services/GoogleSheetsService';
+import { UserCredentials } from '../services/googleSheets/types';
 import { logger } from './logger';
+import { createCategoryService } from '../services/googleSheets/endpoints/categories/createCategoryService';
+import { updateCategoryService } from '../services/googleSheets/endpoints/categories/updateCategoryService';
 
 // Color to emoji mapping
 const colorToEmojiMap: Record<string, string> = {
@@ -110,15 +109,41 @@ interface CategoryRecord {
   updated_at: string;
 }
 
+// Minimal interface for the category-related service objects we use
+// keep method shapes narrow to satisfy linting and provide clear intent
+// (we don't import this type from the shared module because these endpoint
+// wrappers are plain objects with a small subset of the full API)
+type CategoryServiceLike = {
+  setCredentials?: (c: UserCredentials) => void;
+  ensureCategoriesSchema?: (spreadsheetId: string) => Promise<void>;
+  find: (
+    spreadsheetId: string,
+    table: string,
+    filters?: Record<string, unknown>
+  ) => Promise<unknown[]>;
+  update: (
+    spreadsheetId: string,
+    table: string,
+    id: string,
+    data: Record<string, unknown>
+  ) => Promise<void>;
+};
+
 /**
  * Migrate categories to include emoji column
  */
 export class CategoryMigration {
-  private googleSheetsService: GoogleSheetsService;
+  private createSvc: CategoryServiceLike =
+    createCategoryService as unknown as CategoryServiceLike;
+  private updateSvc: CategoryServiceLike =
+    updateCategoryService as unknown as CategoryServiceLike;
 
   constructor(googleCredentials: UserCredentials) {
-    this.googleSheetsService = new GoogleSheetsService();
-    this.googleSheetsService.setCredentials(googleCredentials);
+    // Set credentials on the small service objects we depend on
+    if (this.createSvc.setCredentials)
+      this.createSvc.setCredentials(googleCredentials);
+    if (this.updateSvc.setCredentials)
+      this.updateSvc.setCredentials(googleCredentials);
   }
 
   /**
@@ -130,13 +155,13 @@ export class CategoryMigration {
       logger.info('Starting category emoji migration...');
 
       // Ensure schema present (adds emoji header if missing)
-      await this.googleSheetsService.ensureCategoriesSchema(spreadsheetId);
+      await this.createSvc.ensureCategoriesSchema!(spreadsheetId);
 
       // Get all categories
-      const categories = await this.googleSheetsService.find(
+      const categories = await this.createSvc.find(
         spreadsheetId,
         'categories',
-        {} // Get all categories
+        {}
       );
 
       logger.info(`Found ${categories.length} categories to migrate`);
@@ -165,7 +190,7 @@ export class CategoryMigration {
 
         // Update the category with emoji
         try {
-          await this.googleSheetsService.update(
+          await this.updateSvc.update(
             spreadsheetId,
             'categories',
             categoryData.id,
@@ -202,8 +227,8 @@ export class CategoryMigration {
     withoutEmoji: number;
   }> {
     try {
-      await this.googleSheetsService.ensureCategoriesSchema(spreadsheetId);
-      const categories = await this.googleSheetsService.find(
+      await this.createSvc.ensureCategoriesSchema!(spreadsheetId);
+      const categories = await this.createSvc.find(
         spreadsheetId,
         'categories',
         {}

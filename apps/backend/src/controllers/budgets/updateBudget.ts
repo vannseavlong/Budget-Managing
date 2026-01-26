@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { updateBudgetService } from '../../services/googleSheets/endpoints/budgets/updateBudgetService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { z } from 'zod';
@@ -15,7 +15,7 @@ export async function updateBudget(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
     const validatedData = updateBudgetSchema.parse(req.body);
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = updateBudgetService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Check if budget exists and belongs to this user

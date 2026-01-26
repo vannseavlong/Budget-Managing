@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { deleteCategoryService } from '../../services/googleSheets/endpoints/categories/deleteCategoryService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -15,7 +15,7 @@ export async function deleteCategory(
     const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
     const { id } = req.params;
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = deleteCategoryService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Check if category exists and belongs to this user

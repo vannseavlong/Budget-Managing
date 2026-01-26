@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { updateGoalService } from '../../services/googleSheets/endpoints/goals/updateGoalService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { z } from 'zod';
@@ -15,7 +15,7 @@ export async function updateGoal(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
     const validatedData = updateGoalSchema.parse(req.body);
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = updateGoalService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Check if goal exists and belongs to this user

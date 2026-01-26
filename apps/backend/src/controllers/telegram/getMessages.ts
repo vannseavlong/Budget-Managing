@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { getMessagesService } from '../../services/googleSheets/endpoints/telegram/getMessagesService';
 import { logger } from '../../utils/logger';
 
-const googleSheetsService = new GoogleSheetsService();
+const googleSheetsService = getMessagesService;
 
 export async function getMessages(req: Request, res: Response): Promise<void> {
   try {

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { createTransactionService } from '../../services/googleSheets/endpoints/transactions/createTransactionService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
@@ -18,7 +18,7 @@ export async function createTransaction(
     const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
     const validatedData = createTransactionSchema.parse(req.body);
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = createTransactionService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Verify that the category exists and belongs to this user

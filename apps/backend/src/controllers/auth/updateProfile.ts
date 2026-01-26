@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { updateProfileService } from '../../services/googleSheets/endpoints/auth/updateProfileService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { z } from 'zod';
@@ -32,7 +32,7 @@ export async function updateProfile(
     // Validate request body
     const validatedData = updateProfileSchema.parse(req.body);
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = updateProfileService;
     googleSheetsService.setCredentials(user.googleCredentials);
 
     // Prepare update data

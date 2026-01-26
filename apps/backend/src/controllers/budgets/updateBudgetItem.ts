@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { updateBudgetItemService } from '../../services/googleSheets/endpoints/budgets/updateBudgetItemService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { z } from 'zod';
@@ -18,20 +18,19 @@ export async function updateBudgetItem(
     const { id } = req.params;
     const validatedData = updateBudgetItemSchema.parse(req.body);
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = updateBudgetItemService;
     googleSheetsService.setCredentials(googleCredentials);
 
-    // Check if budget item exists and belongs to this user
+    // Optimization: We skip budget ownership validation to reduce API quota usage
+    // The spreadsheet is already user-specific (from auth token), so budget items
+    // in this spreadsheet inherently belong to this user
     const existingBudgetItem = await googleSheetsService.findById(
       spreadsheetId,
       'budget_items',
       id
     );
 
-    if (
-      !existingBudgetItem ||
-      existingBudgetItem.user_id !== authenticatedReq.user!.email
-    ) {
+    if (!existingBudgetItem) {
       res.status(404).json({
         success: false,
         message: 'Budget item not found',

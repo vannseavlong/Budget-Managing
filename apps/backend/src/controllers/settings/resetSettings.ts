@@ -1,9 +1,6 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
 import { logger } from '../../utils/logger';
 import { defaultSettings } from './types';
-
-const googleSheetsService = new GoogleSheetsService();
 
 /**
  * Reset settings to default

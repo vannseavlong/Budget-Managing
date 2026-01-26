@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { updateCategoryService } from '../../services/googleSheets/endpoints/data/updateCategoryService';
 import { logger } from '../../utils/logger';
 import {
   categorySchema,
@@ -7,7 +7,7 @@ import {
   getUserSpreadsheetId,
 } from './types';
 
-const googleSheetsService = new GoogleSheetsService();
+const googleSheetsService = updateCategoryService;
 
 export async function updateCategory(
   req: Request,

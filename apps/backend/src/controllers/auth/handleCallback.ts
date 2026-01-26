@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { handleCallbackService } from '../../services/googleSheets/endpoints/auth/handleCallbackService';
 import { logger } from '../../utils/logger';
 import jwt from 'jsonwebtoken';
 import { authCallbackSchema } from './types';
@@ -16,7 +16,7 @@ export async function handleCallback(
     const validatedData = authCallbackSchema.parse(req.query);
     const { code } = validatedData;
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = handleCallbackService;
 
     // Exchange code for tokens
     const credentials = await googleSheetsService.getTokens(code);

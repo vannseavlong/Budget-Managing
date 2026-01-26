@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { getIncomesService } from '../../services/googleSheets/endpoints/budgets/getIncomesService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -11,7 +11,7 @@ export async function getIncomes(req: Request, res: Response) {
     const authenticatedReq = req as AuthenticatedRequest;
     const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = getIncomesService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Ensure the incomes table exists

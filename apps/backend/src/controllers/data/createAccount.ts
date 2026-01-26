@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { createAccountService } from '../../services/googleSheets/endpoints/data/createAccountService';
 import { logger } from '../../utils/logger';
 import {
   accountSchema,
@@ -8,7 +8,7 @@ import {
   getUserEmail,
 } from './types';
 
-const googleSheetsService = new GoogleSheetsService();
+const googleSheetsService = createAccountService;
 
 export async function createAccount(
   req: Request,
