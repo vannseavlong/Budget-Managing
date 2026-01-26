@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { initiateAuthService } from '../../services/googleSheets/endpoints/auth/initiateAuthService';
 import { logger } from '../../utils/logger';
 
 /**
@@ -7,7 +7,7 @@ import { logger } from '../../utils/logger';
  */
 export async function initiateAuth(req: Request, res: Response): Promise<void> {
   try {
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = initiateAuthService;
     const authUrl = googleSheetsService.getAuthUrl();
 
     res.status(200).json({

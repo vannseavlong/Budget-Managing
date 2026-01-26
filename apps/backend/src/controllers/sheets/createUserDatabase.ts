@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { createUserDatabaseService } from '../../services/googleSheets/endpoints/sheets/createUserDatabaseService';
 import { logger } from '../../utils/logger';
 import { createSpreadsheetSchema } from './types';
 import { z } from 'zod';
 
-const googleSheetsService = new GoogleSheetsService();
+const googleSheetsService = createUserDatabaseService;
 
 export async function createUserDatabase(
   req: Request,

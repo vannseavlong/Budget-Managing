@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { getTransactionsService } from '../../services/googleSheets/endpoints/transactions/getTransactionsService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { TransactionQueryParams } from './types';
@@ -23,7 +23,7 @@ export async function getTransactions(
       date_to,
     } = req.query as any as TransactionQueryParams;
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = getTransactionsService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Build filter criteria

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { validateDatabaseService } from '../../services/googleSheets/endpoints/auth/validateDatabaseService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -22,7 +22,7 @@ export async function validateDatabase(
       return;
     }
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = validateDatabaseService;
 
     // Set credentials and validate database
     googleSheetsService.setCredentials(user.googleCredentials);

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { getBudgetItemsService } from '../../services/googleSheets/endpoints/budgets/getBudgetItemsService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -15,7 +15,7 @@ export async function getBudgetItems(
     const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
     const { budgetId } = req.params;
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = getBudgetItemsService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // First verify the budget exists and belongs to this user
@@ -55,7 +55,7 @@ export async function getBudgetItems(
 
     // Sort by category name
     budgetItems.sort((a: any, b: any) =>
-      a.category_name.localeCompare(b.category_name)
+      String(a.category_name || '').localeCompare(String(b.category_name || ''))
     );
 
     res.status(200).json({

@@ -84,11 +84,21 @@ export function LoginCard() {
       {/* Terms and Privacy */}
       <div className="text-center text-sm text-gray-500">
         By continuing, you agree to our{' '}
-        <a href="#" className="underline hover:text-gray-700">
+        <a
+          href="/terms"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-gray-700"
+        >
           Terms of Service
         </a>{' '}
         and{' '}
-        <a href="#" className="underline hover:text-gray-700">
+        <a
+          href="/privacy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-gray-700"
+        >
           Privacy Policy
         </a>
       </div>

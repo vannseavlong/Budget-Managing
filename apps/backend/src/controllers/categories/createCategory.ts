@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { createCategoryService } from '../../services/googleSheets/endpoints/categories/createCategoryService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
@@ -18,7 +18,7 @@ export async function createCategory(
     const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
     const validatedData = createCategorySchema.parse(req.body);
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = createCategoryService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Ensure categories sheet has emoji column before inserting

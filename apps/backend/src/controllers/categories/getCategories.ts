@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
 import { logger } from '../../utils/logger';
+import { getCategoriesService } from '../../services/googleSheets/endpoints/categories/getCategoriesService';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
 interface CategoryData {
@@ -112,7 +112,7 @@ export async function getCategories(
     const authenticatedReq = req as AuthenticatedRequest;
     const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = getCategoriesService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Ensure categories sheet has emoji column for migration

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { createBudgetService } from '../../services/googleSheets/endpoints/budgets/createBudgetService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
@@ -15,7 +15,7 @@ export async function createBudget(req: Request, res: Response): Promise<void> {
     const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
     const validatedData = createBudgetSchema.parse(req.body);
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = createBudgetService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Check if budget for same year/month already exists for this user

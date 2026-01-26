@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { logger } from '../../utils/logger';
 import { sendTelegramMessageSchema, getBotToken } from './types';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { sendMessageService } from '../../services/googleSheets/endpoints/telegram/sendMessageService';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { z } from 'zod';
 
@@ -88,7 +88,8 @@ export async function sendMessage(req: Request, res: Response): Promise<void> {
 
     // Save message to Google Sheets database
     try {
-      const googleSheetsService = new GoogleSheetsService();
+      const googleSheetsService = sendMessageService;
+      // attach user's credentials for any user-scoped operations
       googleSheetsService.setCredentials(googleCredentials);
 
       const messageData = {

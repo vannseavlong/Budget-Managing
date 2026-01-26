@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { getCategoriesService } from '../../services/googleSheets/endpoints/data/getCategoriesService';
 import { logger } from '../../utils/logger';
 import {
   setupUserCredentials,
@@ -7,7 +7,7 @@ import {
   getUserEmail,
 } from './types';
 
-const googleSheetsService = new GoogleSheetsService();
+const googleSheetsService = getCategoriesService;
 
 export async function getCategories(
   req: Request,

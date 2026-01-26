@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { deleteGoalService } from '../../services/googleSheets/endpoints/goals/deleteGoalService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -12,7 +12,7 @@ export async function deleteGoal(req: Request, res: Response): Promise<void> {
     const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
     const { id } = req.params;
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = deleteGoalService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Check if goal exists and belongs to this user

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { createIncomeService } from '../../services/googleSheets/endpoints/budgets/createIncomeService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
@@ -15,7 +15,7 @@ export async function createBudgetIncome(req: Request, res: Response) {
     const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
     const validated = createIncomeSchema.parse(req.body);
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = createIncomeService;
     googleSheetsService.setCredentials(googleCredentials);
 
     const newRecord = {
@@ -54,22 +54,17 @@ export async function createBudgetIncome(req: Request, res: Response) {
       .json({ success: true, data: newRecord, message: 'Income recorded' });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res
-        .status(400)
-        .json({
-          success: false,
-          message: 'Validation error',
-          errors: error.errors,
-        });
+      res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: error.errors,
+      });
       return;
     }
     logger.error('Error creating budget income:', error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message:
-          error instanceof Error ? error.message : 'Internal server error',
-      });
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Internal server error',
+    });
   }
 }

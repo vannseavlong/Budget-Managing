@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { updateTransactionService } from '../../services/googleSheets/endpoints/transactions/updateTransactionService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { z } from 'zod';
@@ -18,7 +18,7 @@ export async function updateTransaction(
     const { id } = req.params;
     const validatedData = updateTransactionSchema.parse(req.body);
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = updateTransactionService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Check if transaction exists and belongs to this user

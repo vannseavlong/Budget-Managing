@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { checkGoalProgressService } from '../../services/googleSheets/endpoints/goals/checkGoalProgressService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { GoalPeriod } from './types';
@@ -16,7 +16,7 @@ export async function checkGoalProgress(
     const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
     const { id } = req.params;
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = checkGoalProgressService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Check if goal exists and belongs to this user

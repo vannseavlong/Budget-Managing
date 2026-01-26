@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { deleteTransactionService } from '../../services/googleSheets/endpoints/transactions/deleteTransactionService';
 import { logger } from '../../utils/logger';
 import { setupUserCredentials, getUserSpreadsheetId } from './types';
 
-const googleSheetsService = new GoogleSheetsService();
+const googleSheetsService = deleteTransactionService;
 
 export async function deleteTransaction(
   req: Request,
@@ -24,6 +24,7 @@ export async function deleteTransaction(
     await googleSheetsService.delete(spreadsheetId, 'transactions', id);
 
     // Adjust account balance
+    // Note: The following logic may need to be adjusted based on the new service's capabilities
     if (transaction) {
       const account = await googleSheetsService.findById(
         spreadsheetId,

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { deleteBudgetService } from '../../services/googleSheets/endpoints/budgets/deleteBudgetService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -12,7 +12,7 @@ export async function deleteBudget(req: Request, res: Response): Promise<void> {
     const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
     const { id } = req.params;
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = deleteBudgetService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Check if budget exists and belongs to this user

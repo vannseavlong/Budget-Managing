@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { logger } from '../../utils/logger';
 import { TelegramConnectionStore } from '../../utils/TelegramConnectionStore';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { disconnectTelegramService } from '../../services/googleSheets/endpoints/telegram/disconnectTelegramService';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
 export async function disconnectTelegram(
@@ -33,7 +33,7 @@ export async function disconnectTelegram(
 
     // Remove from Google Sheets
     try {
-      const sheetsService = new GoogleSheetsService();
+      const sheetsService = disconnectTelegramService;
       const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
 
       if (spreadsheetId && googleCredentials) {

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Budget Manager API - Updated Endpoints",
-    "description": "New and updated endpoints for Budget Manager API - November 2025",
+    "description": "New and updated endpoints for Budget Manager API - November 2025 (updated 2025-11-10)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -58,7 +58,7 @@
             }
           ],
           "cookie": [],
-          "body": "{\n  \"success\": true,\n  \"message\": \"Budget Managing API is running!\",\n  \"endpoints\": {\n    \"health\": \"/health\",\n    \"telegram_webhook\": \"/api/v1/telegram/webhook\",\n    \"api_docs\": \"/api/v1/docs\"\n  },\n  \"timestamp\": \"2025-11-06T10:00:00.000Z\"\n}"
+          "body": "{\n  \"success\": true,\n  \"message\": \"Budget Managing API is running!\",\n  \"endpoints\": {\n    \"health\": \"/health\",\n    \"telegram_webhook\": \"/api/v1/telegram/webhook\",\n    \"api_docs\": \"/api/v1/docs\"\n  },\n  \"timestamp\": \"2025-11-10T00:00:00.000Z\"\n}"
         }
       ]
     },
@@ -96,7 +96,7 @@
             }
           ],
           "cookie": [],
-          "body": "{\n  \"status\": \"OK\",\n  \"timestamp\": \"2025-11-06T10:00:00.000Z\",\n  \"uptime\": 1234.567,\n  \"version\": \"1.0.0\",\n  \"message\": \"Budget Managing API with Google Sheets integration\"\n}"
+          "body": "{\n  \"status\": \"OK\",\n  \"timestamp\": \"2025-11-10T00:00:00.000Z\",\n  \"uptime\": 1234.567,\n  \"version\": \"1.0.0\",\n  \"message\": \"Budget Managing API with Google Sheets integration\"\n}"
         }
       ]
     },

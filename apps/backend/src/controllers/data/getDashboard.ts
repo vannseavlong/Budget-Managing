@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { getDashboardService } from '../../services/googleSheets/endpoints/data/getDashboardService';
 import { logger } from '../../utils/logger';
 import {
   setupUserCredentials,
@@ -7,7 +7,7 @@ import {
   getUserEmail,
 } from './types';
 
-const googleSheetsService = new GoogleSheetsService();
+const googleSheetsService = getDashboardService;
 
 export async function getDashboard(req: Request, res: Response): Promise<void> {
   try {

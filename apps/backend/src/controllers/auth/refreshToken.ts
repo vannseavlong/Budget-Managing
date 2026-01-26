@@ -1,9 +1,7 @@
 import { Request, Response } from 'express';
-import {
-  GoogleSheetsService,
-  UserCredentials,
-} from '../../services/GoogleSheetsService';
 import { logger } from '../../utils/logger';
+import { setCredentials } from '../../services/googleSheets';
+import { UserCredentials } from '../../services/googleSheets/types';
 import { z } from 'zod';
 import { refreshTokenSchema } from './types';
 
@@ -15,12 +13,8 @@ export async function refreshToken(req: Request, res: Response): Promise<void> {
     const validatedData = refreshTokenSchema.parse(req.body);
     const { refresh_token } = validatedData;
 
-    const googleSheetsService = new GoogleSheetsService();
-
-    // Set refresh token and get new access token
-    googleSheetsService.setCredentials({
-      refresh_token,
-    } as UserCredentials);
+    // Set refresh token on the shared Google auth client
+    setCredentials({ refresh_token } as UserCredentials);
 
     // In a real implementation, you'd refresh the token here
     // For now, we'll return a success message
