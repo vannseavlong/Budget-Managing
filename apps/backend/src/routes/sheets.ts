@@ -11,6 +11,10 @@ import {
   initializeSchema,
   createBackup,
 } from '../controllers/sheets';
+import {
+  checkSchemaStatus,
+  triggerSchemaMigration,
+} from '../controllers/sheets/schemaMigration';
 
 const router = express.Router();
 
@@ -231,6 +235,64 @@ router.post('/import', importData);
  *         description: No spreadsheet found for user
  */
 router.post('/schema/init', initializeSchema);
+
+/**
+ * @swagger
+ * /api/v1/sheets/schema/status:
+ *   get:
+ *     summary: Check schema version and migration status
+ *     tags: [Google Sheets]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Schema status retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     currentVersion:
+ *                       type: number
+ *                     latestVersion:
+ *                       type: number
+ *                     isUpToDate:
+ *                       type: boolean
+ *                     missingSheets:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: No spreadsheet found for user
+ */
+router.get('/schema/status', checkSchemaStatus);
+
+/**
+ * @swagger
+ * /api/v1/sheets/schema/migrate:
+ *   post:
+ *     summary: Manually trigger schema migration to latest version
+ *     tags: [Google Sheets]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Schema migration completed successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: No spreadsheet found for user
+ *       500:
+ *         description: Migration failed
+ */
+router.post('/schema/migrate', triggerSchemaMigration);
 
 /**
  * @swagger

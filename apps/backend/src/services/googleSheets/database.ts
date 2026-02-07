@@ -5,6 +5,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { createSheet } from './sheets';
 import { insert } from './crud';
 import { logger } from '../../utils/logger';
+import { migrateSchema, ensureAllSheetsExist } from './schema-migration';
+import { BASE_SCHEMA } from './schema-versions';
 
 export async function getOrCreateUserDatabase(
   userEmail: string,
@@ -23,6 +25,10 @@ export async function getOrCreateUserDatabase(
       logger.info(
         `Found existing spreadsheet for ${userEmail}: ${existingFile.id}`
       );
+      
+      // Auto-migrate schema for existing users
+      await migrateSchema(existingFile.id!);
+      
       return existingFile.id!;
     }
 
@@ -30,6 +36,32 @@ export async function getOrCreateUserDatabase(
   } catch (error) {
     logger.error('Error getting/creating user database:', error);
     throw new Error('Failed to get or create user database');
+  }
+}
+
+/**
+ * Find an existing user spreadsheet by email. Returns spreadsheetId or null.
+ * This does NOT create a spreadsheet.
+ */
+export async function findUserSpreadsheetByEmail(
+  userEmail: string
+): Promise<string | null> {
+  try {
+    const auth = getAuthenticatedClient();
+    const drive = google.drive({ version: 'v3', auth });
+    const searchResponse = await drive.files.list({
+      q: `name contains 'Budget Manager - ${userEmail}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`,
+      fields: 'files(id, name)',
+    });
+
+    if (searchResponse.data.files && searchResponse.data.files.length > 0) {
+      return searchResponse.data.files[0].id || null;
+    }
+
+    return null;
+  } catch (error) {
+    logger.error('Error searching for user spreadsheet:', error);
+    return null;
   }
 }
 
@@ -41,6 +73,7 @@ export async function createNewUserDatabase(
     const authClient = getAuthenticatedClient();
     const sheets = google.sheets({ version: 'v4', auth: authClient });
 
+    // Create empty spreadsheet
     const spreadsheet = await sheets.spreadsheets.create({
       requestBody: {
         properties: { title: `Budget Manager - ${userEmail}` },
@@ -49,207 +82,10 @@ export async function createNewUserDatabase(
     });
     const spreadsheetId = spreadsheet.data.spreadsheetId!;
 
-    const schema: TableSchema[] = [
-      {
-        name: 'users',
-        columns: [
-          'id',
-          'name',
-          'email',
-          'password_hash',
-          'telegram_username',
-          'chatId',
-          'created_at',
-          'updated_at',
-        ],
-        primaryKey: 'id',
-      },
-      {
-        name: 'settings',
-        columns: [
-          'user_id',
-          'currency',
-          'language',
-          'dark_mode',
-          'telegram_notifications',
-          'telegram_chat_id',
-          'created_at',
-          'updated_at',
-        ],
-        foreignKeys: [
-          {
-            column: 'user_id',
-            referencedTable: 'users',
-            referencedColumn: 'id',
-          },
-        ],
-      },
-      {
-        name: 'categories',
-        columns: [
-          'id',
-          'user_id',
-          'name',
-          'emoji',
-          'color',
-          'created_at',
-          'updated_at',
-        ],
-        primaryKey: 'id',
-        foreignKeys: [
-          {
-            column: 'user_id',
-            referencedTable: 'users',
-            referencedColumn: 'id',
-          },
-        ],
-      },
-      {
-        name: 'transactions',
-        columns: [
-          'id',
-          'user_id',
-          'name',
-          'amount',
-          'category_id',
-          'category_name',
-          'date',
-          'time',
-          'notes',
-          'receipt_url',
-          'created_at',
-          'updated_at',
-        ],
-        primaryKey: 'id',
-        foreignKeys: [
-          {
-            column: 'user_id',
-            referencedTable: 'users',
-            referencedColumn: 'id',
-          },
-          {
-            column: 'category_id',
-            referencedTable: 'categories',
-            referencedColumn: 'id',
-          },
-        ],
-      },
-      {
-        name: 'budgets',
-        columns: [
-          'id',
-          'user_id',
-          'year',
-          'month',
-          'income',
-          'created_at',
-          'updated_at',
-        ],
-        primaryKey: 'id',
-        foreignKeys: [
-          {
-            column: 'user_id',
-            referencedTable: 'users',
-            referencedColumn: 'id',
-          },
-        ],
-      },
-      {
-        name: 'budget_incomes',
-        columns: [
-          'id',
-          'user_id',
-          'year',
-          'month',
-          'amount',
-          'source',
-          'created_at',
-          'updated_at',
-        ],
-        primaryKey: 'id',
-        foreignKeys: [
-          {
-            column: 'user_id',
-            referencedTable: 'users',
-            referencedColumn: 'id',
-          },
-        ],
-      },
-      {
-        name: 'budget_items',
-        columns: [
-          'id',
-          'budget_id',
-          'category_id',
-          'category_name',
-          'amount',
-          'spent',
-          'created_at',
-          'updated_at',
-        ],
-        primaryKey: 'id',
-        foreignKeys: [
-          {
-            column: 'budget_id',
-            referencedTable: 'budgets',
-            referencedColumn: 'id',
-          },
-          {
-            column: 'category_id',
-            referencedTable: 'categories',
-            referencedColumn: 'id',
-          },
-        ],
-      },
-      {
-        name: 'goals',
-        columns: [
-          'id',
-          'user_id',
-          'name',
-          'limit_amount',
-          'period',
-          'notify_telegram',
-          'last_notified_at',
-          'created_at',
-          'updated_at',
-        ],
-        primaryKey: 'id',
-        foreignKeys: [
-          {
-            column: 'user_id',
-            referencedTable: 'users',
-            referencedColumn: 'id',
-          },
-        ],
-      },
-      {
-        name: 'telegram_messages',
-        columns: [
-          'id',
-          'user_id',
-          'chat_id',
-          'payload',
-          'status',
-          'error',
-          'sent_at',
-          'created_at',
-        ],
-        primaryKey: 'id',
-        foreignKeys: [
-          {
-            column: 'user_id',
-            referencedTable: 'users',
-            referencedColumn: 'id',
-          },
-        ],
-      },
-    ];
+    // Use the schema migration system to create all sheets
+    await ensureAllSheetsExist(spreadsheetId);
 
-    for (const table of schema) {
-      await createSheet(spreadsheetId, table);
-    }
-
+    // Create initial user record
     const userId = uuidv4();
     await insert(spreadsheetId, 'users', {
       id: userId,
@@ -262,6 +98,7 @@ export async function createNewUserDatabase(
       updated_at: new Date().toISOString(),
     });
 
+    // Create initial settings record
     await insert(spreadsheetId, 'settings', {
       user_id: userId,
       currency: 'USD',
