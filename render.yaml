@@ -17,15 +17,36 @@ services:
         generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
+      - key: HMAC_SECRET
+        generateValue: true
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
         sync: false
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: TELEGRAM_BOT_USERNAME
         sync: false
+      - key: TELEGRAM_WEBHOOK_URL
+        sync: false
       - key: FRONTEND_URL
         sync: false
       - key: BACKEND_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      # Admin / longcelot-sheet-db — required for the admin stats feature
+      # and the per-user Sheets CRUD layer to work at all
+      - key: ADMIN_SHEET_ID
+        sync: false
+      - key: SUPER_ADMIN_EMAIL
+        sync: false
+      # Redis — persists the admin account's Google OAuth tokens for the
+      # sheet-db adapter (src/services/sheetDb/adapter.ts). Render's free
+      # web-service plan doesn't include a managed Redis; provision one
+      # (Render's own Key Value service, or an external free tier like
+      # Upstash) and paste its connection URL here.
+      - key: REDIS_URL
         sync: false

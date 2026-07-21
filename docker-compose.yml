@@ -24,13 +24,28 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
+      BACKEND_URL: http://localhost:3001
+      FRONTEND_URL: http://localhost:3000
       REDIS_URL: redis://:redispassword@redis:6379
       JWT_SECRET: your-super-secret-jwt-key-change-this-in-production
       JWT_EXPIRES_IN: 7d
+      JWT_REFRESH_SECRET: your-super-secret-refresh-key-change-this-in-production
+      JWT_REFRESH_EXPIRES_IN: 30d
+      HMAC_SECRET: your-hmac-secret-key-change-in-production-min-32-chars-long
+      BCRYPT_ROUNDS: 12
       ALLOWED_ORIGINS: http://localhost:3000,https://yourdomain.com
+      LOG_LEVEL: info
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
+      # Admin / longcelot-sheet-db — required for the admin stats feature
+      # and the per-user Sheets CRUD layer to function at all
+      ADMIN_SHEET_ID: ${ADMIN_SHEET_ID}
+      SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL}
+      # Telegram — optional, OTP/Telegram features stay disabled without these
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+      TELEGRAM_WEBHOOK_URL: ${TELEGRAM_WEBHOOK_URL:-}
     ports:
       - "3001:3001"
     depends_on:
@@ -47,11 +62,21 @@ services:
     build:
       context: .
       dockerfile: apps/frontend/Dockerfile
+      args:
+        # NEXT_PUBLIC_* vars are baked in at build time — setting them under
+        # `environment:` below has no effect on an already-built standalone
+        # output, and http://backend:3001 wouldn't even be reachable from
+        # the browser anyway (it's a container-network-only hostname). This
+        # needs to be an address the user's browser can actually reach.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+        NEXT_PUBLIC_FRONTEND_URL: ${NEXT_PUBLIC_FRONTEND_URL:-http://localhost:3000}
+        NEXT_PUBLIC_TELEGRAM_BOT_URL: ${NEXT_PUBLIC_TELEGRAM_BOT_URL:-}
+        NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: ${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME:-}
+        NEXT_PUBLIC_TELEGRAM_START_PARAM: ${NEXT_PUBLIC_TELEGRAM_START_PARAM:-}
     container_name: budget-frontend
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: http://backend:3001
       BACKEND_URL: http://backend:3001
     ports:
       - "3000:3000"

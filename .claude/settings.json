@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c ' *)",
+      "Bash(npm ci *)",
+      "Bash(pnpm --version)",
+      "Bash(git rm *)",
+      "Bash(rm -rf node_modules apps/*/node_modules packages/*/node_modules)",
+      "Bash(git commit -m ' *)",
+      "Bash(mkdir -p schemas/admin schemas/user)",
+      "Bash(cp /tmp/probe-import.ts src/services/sheetDb/_probeImport.ts)",
+      "Bash(ln -s src/services/sheetDb/schemas schemas)",
+      "Bash(echo \"exit:$?\")"
+    ]
+  }
+}

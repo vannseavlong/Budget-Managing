@@ -21,6 +21,21 @@ WORKDIR /app
 COPY --from=deps /app ./
 COPY . .
 
+# NEXT_PUBLIC_* vars are inlined into the client bundle at build time, not
+# read at container runtime — they must be passed as build args, not just
+# `environment:` in docker-compose (which has no effect on an already-built
+# standalone output).
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_FRONTEND_URL
+ARG NEXT_PUBLIC_TELEGRAM_BOT_URL
+ARG NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
+ARG NEXT_PUBLIC_TELEGRAM_START_PARAM
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_FRONTEND_URL=$NEXT_PUBLIC_FRONTEND_URL
+ENV NEXT_PUBLIC_TELEGRAM_BOT_URL=$NEXT_PUBLIC_TELEGRAM_BOT_URL
+ENV NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=$NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
+ENV NEXT_PUBLIC_TELEGRAM_START_PARAM=$NEXT_PUBLIC_TELEGRAM_START_PARAM
+
 # Build the frontend
 RUN pnpm --filter ./apps/frontend run build
 
