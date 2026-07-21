@@ -11,9 +11,9 @@ export DOCKER_IMAGE_TAG="v$(date +%Y%m%d%H%M%S)"
 
 # Pre-deployment checks
 echo "🔍 Running pre-deployment checks..."
-npm run security:audit
-npm run test --workspace=apps/frontend
-npm run build --workspace=apps/frontend
+pnpm run security:audit
+pnpm --filter ./apps/frontend run test
+pnpm --filter ./apps/frontend run build
 
 # Build and deploy frontend
 echo "📦 Building production frontend Docker image..."

@@ -16,7 +16,7 @@ import {
   getDashboard,
 } from '../controllers/data';
 
-const router = Router();
+const router: Router = Router();
 
 // All data routes require authentication
 router.use(authenticateToken);

@@ -41,19 +41,19 @@ if ([int]$nodeVersionNumber -lt 18) {
   exit 1
 }
 
-# Check if npm is installed
+# Check if pnpm is installed
 try {
-  $npmVersion = npm --version
-  Write-Success "npm version: $npmVersion"
+  $pnpmVersion = pnpm --version
+  Write-Success "pnpm version: $pnpmVersion"
 }
 catch {
-  Write-Error "npm is not installed. Please install npm and try again."
+  Write-Error "pnpm is not installed. Please install pnpm (npm install -g pnpm) and try again."
   exit 1
 }
 
 # Install dependencies
 Write-Status "Installing dependencies..."
-npm install
+pnpm install
 if ($LASTEXITCODE -eq 0) {
   Write-Success "Dependencies installed successfully"
 }
@@ -64,7 +64,7 @@ else {
 
 # Set up Git hooks
 Write-Status "Setting up Git hooks..."
-npx husky install
+pnpm exec husky install
 if ($LASTEXITCODE -eq 0) {
   Write-Success "Git hooks set up successfully"
 }
@@ -143,7 +143,7 @@ if (-not (Test-Path $logsDir)) {
 
 # Build all packages
 Write-Status "Building all packages..."
-npm run build
+pnpm run build
 if ($LASTEXITCODE -eq 0) {
   Write-Success "All packages built successfully"
 }
@@ -153,7 +153,7 @@ else {
 
 # Run initial tests
 Write-Status "Running initial tests..."
-npm run test
+pnpm run test
 if ($LASTEXITCODE -eq 0) {
   Write-Success "All tests passed"
 }
@@ -163,12 +163,12 @@ else {
 
 # Security audit
 Write-Status "Running security audit..."
-npm audit --audit-level moderate
+pnpm audit --audit-level moderate
 if ($LASTEXITCODE -eq 0) {
   Write-Success "No security vulnerabilities found"
 }
 else {
-  Write-Warning "Security vulnerabilities detected. Run 'npm audit fix' to resolve."
+  Write-Warning "Security vulnerabilities detected. Run 'pnpm audit --fix' to resolve."
 }
 
 Write-Host ""
@@ -180,11 +180,11 @@ Write-Host "   - apps/backend/.env" -ForegroundColor Gray
 Write-Host "   - apps/frontend/.env.local" -ForegroundColor Gray
 Write-Host ""
 Write-Host "2. Start development servers:" -ForegroundColor White
-Write-Host "   npm run dev" -ForegroundColor Gray
+Write-Host "   pnpm run dev" -ForegroundColor Gray
 Write-Host ""
 Write-Host "3. Or start individual services:" -ForegroundColor White
-Write-Host "   npm run dev --workspace=apps/backend" -ForegroundColor Gray
-Write-Host "   npm run dev --workspace=apps/frontend" -ForegroundColor Gray
+Write-Host "   pnpm --filter ./apps/backend run dev" -ForegroundColor Gray
+Write-Host "   pnpm --filter ./apps/frontend run dev" -ForegroundColor Gray
 Write-Host ""
 Write-Host "4. Access the applications:" -ForegroundColor White
 Write-Host "   - Frontend: http://localhost:3000" -ForegroundColor Gray

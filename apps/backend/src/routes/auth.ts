@@ -11,7 +11,7 @@ import {
   logout,
 } from '../controllers/auth';
 
-const router = Router();
+const router: Router = Router();
 
 // Public routes
 router.get('/google', initiateAuth);

@@ -177,7 +177,7 @@ export const register = async (req: Request, res: Response) => {
 
     logger.info(`User registered (pending setup): ${email}`);
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Account created successfully! Next steps: 1) Link your Telegram account for OTP, 2) Verify your Google account to create your budget spreadsheet.',
       data: {
@@ -191,7 +191,7 @@ export const register = async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Registration error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Internal server error during registration',
     });
@@ -310,7 +310,7 @@ export const login = async (req: Request, res: Response) => {
 
     logger.info(`OTP sent to user: ${email}`);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'OTP sent to your Telegram. Please verify to complete login.',
       data: {
@@ -320,7 +320,7 @@ export const login = async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Login error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Internal server error during login',
     });
@@ -419,7 +419,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
 
     logger.info(`User logged in successfully: ${user.email}`);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Login successful',
       data: {
@@ -434,7 +434,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('OTP verification error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Internal server error during OTP verification',
     });
@@ -502,13 +502,13 @@ export const linkTelegram = async (req: Request, res: Response) => {
 
     logger.info(`Telegram linked for user ID: ${userId}`);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Telegram account linked successfully',
     });
   } catch (error) {
     logger.error('Telegram linking error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Internal server error during Telegram linking',
     });
@@ -556,7 +556,7 @@ export const getStatus = async (req: Request, res: Response) => {
 
     const telegramCred = await adapter.findTelegramCredentialByUserId(userId);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         hasTelegramLinked: !!telegramCred,
@@ -566,7 +566,7 @@ export const getStatus = async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Status check error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Internal server error during status check',
     });
@@ -604,7 +604,7 @@ export const completeGoogleSetup = async (req: Request, res: Response) => {
     // Create spreadsheet if it doesn't exist
     if (!spreadsheetId) {
       const auth = getAuthenticatedClient();
-      const { getOrCreateUserDatabase } = await import('../services/googleSheets/database');
+      const { getOrCreateUserDatabase } = await import('../services/googleSheets/database.js');
       spreadsheetId = await getOrCreateUserDatabase(email, pendingUser.username);
       
       if (!spreadsheetId) {
@@ -649,7 +649,7 @@ export const completeGoogleSetup = async (req: Request, res: Response) => {
 
     logger.info(`User completed Google setup: ${email}`);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Google account verified successfully! Your budget spreadsheet has been created. You can now log in.',
       data: {
@@ -662,7 +662,7 @@ export const completeGoogleSetup = async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Complete Google setup error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Internal server error during Google setup completion',
     });

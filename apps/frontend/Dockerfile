@@ -1,24 +1,28 @@
 # Frontend Dockerfile - Simple Next.js build
 FROM node:20-alpine AS base
+RUN corepack enable
 
 # Install dependencies only when needed
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install dependencies
-COPY package*.json ./
-COPY apps/frontend/package*.json ./apps/frontend/
-RUN npm ci --only=production
+# Install dependencies for the whole workspace based on the pnpm lockfile
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/backend/package.json ./apps/backend/
+COPY apps/frontend/package.json ./apps/frontend/
+COPY packages/config/package.json ./packages/config/
+COPY packages/ui/package.json ./packages/ui/
+RUN pnpm install --frozen-lockfile
 
 # Build the application
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app ./
 COPY . .
 
 # Build the frontend
-RUN npm run build --workspace=apps/frontend
+RUN pnpm --filter ./apps/frontend run build
 
 # Production image
 FROM base AS runner

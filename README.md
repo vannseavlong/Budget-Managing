@@ -54,7 +54,7 @@ Budget-Managing/
 
 #### DevOps & Infrastructure
 - **Build Tool**: Turbo (Monorepo)
-- **Package Manager**: npm (workspaces)
+- **Package Manager**: pnpm (workspaces)
 - **CI/CD**: GitHub Actions
 - **Containerization**: Docker + Docker Compose
 - **Security Scanning**: Snyk, OWASP ZAP
@@ -64,7 +64,7 @@ Budget-Managing/
 
 ### Prerequisites
 - Node.js 20+
-- npm 9+
+- pnpm 9+
 - Docker & Docker Compose (optional)
 - Git
 - Google account with Google Cloud Console access
@@ -80,7 +80,7 @@ Budget-Managing/
 
 2. **Install dependencies**
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. **Set up environment variables**
@@ -101,11 +101,11 @@ Budget-Managing/
 5. **Start development services**
    ```bash
    # Start all services
-   npm run dev
+   pnpm run dev
    
    # Or start individual services
-   npm run dev --workspace=apps/backend
-   npm run dev --workspace=apps/frontend
+   pnpm --filter ./apps/backend run dev
+   pnpm --filter ./apps/frontend run dev
    ```
 
 ### Using Docker (Optional)
@@ -152,19 +152,19 @@ Docker is optional since the application uses Google Sheets as the database. Use
 ### Running Tests
 ```bash
 # All tests
-npm run test
+pnpm run test
 
 # Unit tests
-npm run test:unit
+pnpm run test:unit
 
 # Integration tests
-npm run test:integration
+pnpm run test:integration
 
 # E2E tests
-npm run test:e2e
+pnpm run test:e2e
 
 # Coverage report
-npm run test:coverage
+pnpm run test:coverage
 ```
 
 ### Testing Strategy
@@ -194,16 +194,16 @@ See [SECURITY.md](SECURITY.md) for detailed security policies.
 
 ### Development
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 ### Production
 ```bash
 # Build all apps
-npm run build
+pnpm run build
 
 # Start production servers
-npm run start
+pnpm run start
 ```
 
 ### Docker Deployment
@@ -247,36 +247,36 @@ The project includes a comprehensive CI/CD pipeline with:
 ### Development Setup
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Set up git hooks
-npm run prepare
+pnpm run prepare
 
 # Start development
-npm run dev
+pnpm run dev
 ```
 
 ## 📋 Scripts
 
 ### Root Level
-- `npm run dev` - Start all applications in development mode
-- `npm run build` - Build all applications
-- `npm run test` - Run all tests
-- `npm run lint` - Lint all code
-- `npm run format` - Format all code
-- `npm run security:audit` - Run security audit
+- `pnpm run dev` - Start all applications in development mode
+- `pnpm run build` - Build all applications
+- `pnpm run test` - Run all tests
+- `pnpm run lint` - Lint all code
+- `pnpm run format` - Format all code
+- `pnpm run security:audit` - Run security audit
 
 ### Workspace Specific
 ```bash
 # Backend
-npm run dev --workspace=apps/backend
-npm run build --workspace=apps/backend
-npm run test --workspace=apps/backend
+pnpm --filter ./apps/backend run dev
+pnpm --filter ./apps/backend run build
+pnpm --filter ./apps/backend run test
 
 # Frontend  
-npm run dev --workspace=apps/frontend
-npm run build --workspace=apps/frontend
-npm run test --workspace=apps/frontend
+pnpm --filter ./apps/frontend run dev
+pnpm --filter ./apps/frontend run build
+pnpm --filter ./apps/frontend run test
 ```
 
 ## 📚 Documentation

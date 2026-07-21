@@ -44,17 +44,17 @@ fi
 
 print_success "Node.js version: $(node -v)"
 
-# Check if npm is installed
-if ! command -v npm &> /dev/null; then
-    print_error "npm is not installed. Please install npm and try again."
+# Check if pnpm is installed
+if ! command -v pnpm &> /dev/null; then
+    print_error "pnpm is not installed. Please install pnpm (npm install -g pnpm) and try again."
     exit 1
 fi
 
-print_success "npm version: $(npm -v)"
+print_success "pnpm version: $(pnpm -v)"
 
 # Install dependencies
 print_status "Installing dependencies..."
-npm install
+pnpm install
 if [ $? -eq 0 ]; then
     print_success "Dependencies installed successfully"
 else
@@ -64,7 +64,7 @@ fi
 
 # Set up Git hooks
 print_status "Setting up Git hooks..."
-npx husky install
+pnpm exec husky install
 if [ $? -eq 0 ]; then
     print_success "Git hooks set up successfully"
 else
@@ -119,7 +119,7 @@ print_success "Created logs directory for backend"
 
 # Build all packages
 print_status "Building all packages..."
-npm run build
+pnpm run build
 if [ $? -eq 0 ]; then
     print_success "All packages built successfully"
 else
@@ -128,7 +128,7 @@ fi
 
 # Run initial tests
 print_status "Running initial tests..."
-npm run test
+pnpm run test
 if [ $? -eq 0 ]; then
     print_success "All tests passed"
 else
@@ -137,11 +137,11 @@ fi
 
 # Security audit
 print_status "Running security audit..."
-npm audit --audit-level moderate
+pnpm audit --audit-level moderate
 if [ $? -eq 0 ]; then
     print_success "No security vulnerabilities found"
 else
-    print_warning "Security vulnerabilities detected. Run 'npm audit fix' to resolve."
+    print_warning "Security vulnerabilities detected. Run 'pnpm audit --fix' to resolve."
 fi
 
 echo ""
@@ -153,11 +153,11 @@ echo "   - apps/backend/.env"
 echo "   - apps/frontend/.env.local"
 echo ""
 echo "2. Start development servers:"
-echo "   npm run dev"
+echo "   pnpm run dev"
 echo ""
 echo "3. Or start individual services:"
-echo "   npm run dev --workspace=apps/backend"
-echo "   npm run dev --workspace=apps/frontend"
+echo "   pnpm --filter ./apps/backend run dev"
+echo "   pnpm --filter ./apps/frontend run dev"
 echo ""
 echo "4. Access the applications:"
 echo "   - Frontend: http://localhost:3000"

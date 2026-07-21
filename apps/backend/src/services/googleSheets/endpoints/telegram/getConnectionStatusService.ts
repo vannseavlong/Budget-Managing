@@ -3,7 +3,7 @@ import { DatabaseRecord } from '../../types';
 async function fetchConnectionFromSheets(userEmail: string) {
   // Use the shared database helpers exported from the googleSheets service root
   // This will call into services/googleSheets/database.ts and crud.ts
-  const { getOrCreateUserDatabase, find } = await import('../../');
+  const { getOrCreateUserDatabase, find } = await import('../../index.js');
 
   const spreadsheetId = await getOrCreateUserDatabase(
     userEmail,

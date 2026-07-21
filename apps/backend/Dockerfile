@@ -1,5 +1,6 @@
 # Backend Dockerfile
 FROM node:20-alpine AS base
+RUN corepack enable
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -7,19 +8,22 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
-COPY package.json package-lock.json* ./
+# Install dependencies for the whole workspace based on the pnpm lockfile
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/backend/package.json ./apps/backend/
-RUN npm ci --only=production
+COPY apps/frontend/package.json ./apps/frontend/
+COPY packages/config/package.json ./packages/config/
+COPY packages/ui/package.json ./packages/ui/
+RUN pnpm install --frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app ./
 COPY . .
 
 # Build the backend
-RUN npm run build --workspace=apps/backend
+RUN pnpm --filter ./apps/backend run build
 
 # Production image, copy all the files and run the application
 FROM base AS runner
@@ -33,7 +37,8 @@ RUN adduser --system --uid 1001 backend
 # Copy the built application
 COPY --from=builder /app/apps/backend/dist ./dist
 COPY --from=builder /app/apps/backend/package.json ./package.json
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/backend/node_modules ./apps/backend/node_modules
 
 # Create logs directory
 RUN mkdir -p logs && chown -R backend:nodejs logs

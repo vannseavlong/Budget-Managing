@@ -15,7 +15,7 @@ import {
 } from '../controllers/telegram';
 import { TelegramConnectionStore } from '../utils/TelegramConnectionStore';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Webhook route MUST be defined before authentication middleware
 // Telegram webhooks don't include authentication tokens

@@ -9,10 +9,11 @@ echo "🚀 Starting Render build for Budget Manager Backend..."
 export NODE_ENV=production
 
 echo "📦 Installing dependencies..."
-npm install
+corepack enable
+pnpm install --frozen-lockfile
 
 echo "🏗️ Building backend workspace..."
-npm run build --workspace=apps/backend
+pnpm --filter ./apps/backend run build
 
 echo "✅ Build complete!"
 echo "📂 Build output location: apps/backend/dist/"
