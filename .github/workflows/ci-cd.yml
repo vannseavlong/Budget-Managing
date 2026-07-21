@@ -213,14 +213,26 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Set up environment variables
         run: |
           echo "REGISTRY=${{ env.REGISTRY }}" >> $GITHUB_ENV
           echo "IMAGE_NAME=${{ env.IMAGE_NAME }}" >> $GITHUB_ENV
-          
+
       - name: Make deployment script executable
         run: chmod +x ./scripts/deploy-production.sh
-        
+
       - name: Deploy to production environment
         run: ./scripts/deploy-production.sh
