@@ -1,7 +1,7 @@
 {
-  "buildCommand": "cd ../.. && npm run build --workspace=apps/frontend",
-  "devCommand": "cd ../.. && npm run dev --workspace=apps/frontend",
-  "installCommand": "cd ../.. && npm install",
+  "buildCommand": "cd ../.. && pnpm --filter ./apps/frontend run build",
+  "devCommand": "cd ../.. && pnpm --filter ./apps/frontend run dev",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
   "framework": "nextjs",
   "outputDirectory": ".next"
 }
