@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getTransactionStatsService } from '../../services/googleSheets/endpoints/transactions/getTransactionStatsService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -12,18 +12,17 @@ export async function getTransactionStats(
 ): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const { period = 'month', year, month } = req.query;
 
-    const googleSheetsService = getTransactionStatsService;
-    googleSheetsService.setCredentials(googleCredentials);
+    const transactionsTable = await getUserTable(
+      email,
+      spreadsheetId,
+      'transactions'
+    );
 
     // Get all transactions for this user
-    const transactions = await googleSheetsService.find(
-      spreadsheetId,
-      'transactions',
-      { user_id: authenticatedReq.user!.email }
-    );
+    const transactions = await transactionsTable.findMany({});
 
     // Filter transactions based on period
     let filteredTransactions = transactions;

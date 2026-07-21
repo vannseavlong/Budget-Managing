@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { deleteIncomeService } from '../../services/googleSheets/endpoints/budgets/deleteIncomeService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -9,35 +9,19 @@ import { AuthenticatedRequest } from '../../middleware/auth';
 export async function deleteIncome(req: Request, res: Response) {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const { id } = req.params;
 
-    const googleSheetsService = deleteIncomeService;
-    googleSheetsService.setCredentials(googleCredentials);
-
-    // Ensure the incomes table exists
-    await googleSheetsService.ensureTableExists(spreadsheetId, {
-      name: 'budget_incomes',
-      columns: [
-        'id',
-        'user_id',
-        'year',
-        'month',
-        'amount',
-        'source',
-        'created_at',
-        'updated_at',
-      ],
-    });
-
-    // Verify ownership before deleting
-    const existing = await googleSheetsService.find(
+    const incomesTable = await getUserTable(
+      email,
       spreadsheetId,
-      'budget_incomes',
-      { id, user_id: authenticatedReq.user!.email }
+      'budget_incomes'
     );
 
-    if (!existing || existing.length === 0) {
+    // Check the income exists (it's already scoped to this user's own sheet)
+    const existing = await incomesTable.findOne({ where: { id } });
+
+    if (!existing) {
       res.status(404).json({
         success: false,
         message: 'Income not found',
@@ -45,7 +29,7 @@ export async function deleteIncome(req: Request, res: Response) {
       return;
     }
 
-    await googleSheetsService.delete(spreadsheetId, 'budget_incomes', id);
+    await incomesTable.delete({ where: { id } });
 
     res.status(200).json({
       success: true,

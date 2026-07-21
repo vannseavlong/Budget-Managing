@@ -10,6 +10,7 @@ export interface AuthenticatedRequest extends Request {
     telegram_username?: string;
     chatId?: string;
     googleCredentials: any;
+    role: 'admin' | 'user';
   };
 }
 
@@ -43,6 +44,32 @@ export const authenticateToken = (
       message: 'Invalid or expired token',
     });
   }
+};
+
+export const requireAdmin = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  const user = (req as AuthenticatedRequest).user;
+
+  if (!user) {
+    res.status(401).json({
+      success: false,
+      message: 'Access token required',
+    });
+    return;
+  }
+
+  if (user.role !== 'admin') {
+    res.status(403).json({
+      success: false,
+      message: 'Admin access required',
+    });
+    return;
+  }
+
+  next();
 };
 
 export const optionalAuth = (

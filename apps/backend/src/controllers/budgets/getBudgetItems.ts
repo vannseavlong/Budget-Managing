@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getBudgetItemsService } from '../../services/googleSheets/endpoints/budgets/getBudgetItemsService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -12,25 +12,20 @@ export async function getBudgetItems(
 ): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const { budgetId } = req.params;
 
-    const googleSheetsService = getBudgetItemsService;
-    googleSheetsService.setCredentials(googleCredentials);
+    const budgetsTable = await getUserTable(email, spreadsheetId, 'budgets');
 
-    // First verify the budget exists and belongs to this user
-    const budget = await googleSheetsService.findById(
-      spreadsheetId,
-      'budgets',
-      budgetId
-    );
+    // First verify the budget exists (it's already scoped to this user's own sheet)
+    const budget = await budgetsTable.findOne({ where: { id: budgetId } });
 
     // Debug log: show budget lookup result
     logger.info(
       `getBudgetItems: looked up budgetId=${budgetId} -> ${budget ? 'FOUND' : 'NOT_FOUND'}`
     );
 
-    if (!budget || budget.user_id !== authenticatedReq.user!.email) {
+    if (!budget) {
       res.status(404).json({
         success: false,
         message: 'Budget not found',
@@ -39,14 +34,15 @@ export async function getBudgetItems(
     }
 
     // Get all budget items for this budget (filter by budget_id only).
-    // budget_items sheet does not include user_id column, so don't filter by user_id.
-    const budgetItems = await googleSheetsService.find(
+    // budget_items sheet does not include a user_id column.
+    const budgetItemsTable = await getUserTable(
+      email,
       spreadsheetId,
-      'budget_items',
-      {
-        budget_id: budgetId,
-      }
+      'budget_items'
     );
+    const budgetItems = await budgetItemsTable.findMany({
+      where: { budget_id: budgetId },
+    });
 
     // Debug log: number of items found
     logger.info(

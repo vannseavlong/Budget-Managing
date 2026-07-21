@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createCategoryService } from '../../services/googleSheets/endpoints/categories/createCategoryService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
@@ -15,24 +15,15 @@ export async function createCategory(
 ): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const validatedData = createCategorySchema.parse(req.body);
 
-    const googleSheetsService = createCategoryService;
-    googleSheetsService.setCredentials(googleCredentials);
-
-    // Ensure categories sheet has emoji column before inserting
-    await googleSheetsService.ensureCategoriesSchema(spreadsheetId);
+    const categoriesTable = await getUserTable(email, spreadsheetId, 'categories');
 
     // Check if category with same name already exists for this user
-    const existingCategories = await googleSheetsService.find(
-      spreadsheetId,
-      'categories',
-      {
-        user_id: authenticatedReq.user!.email,
-        name: validatedData.name,
-      }
-    );
+    const existingCategories = await categoriesTable.findMany({
+      where: { name: validatedData.name },
+    });
 
     if (existingCategories.length > 0) {
       res.status(400).json({
@@ -48,13 +39,12 @@ export async function createCategory(
       name: validatedData.name,
       emoji: validatedData.emoji,
       color: validatedData.color, // Keep color for backward compatibility
-      user_id: authenticatedReq.user!.email,
+      user_id: email,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
 
-    // Insert into Google Sheets
-    await googleSheetsService.insert(spreadsheetId, 'categories', newCategory);
+    await categoriesTable.create(newCategory);
 
     res.status(201).json({
       success: true,

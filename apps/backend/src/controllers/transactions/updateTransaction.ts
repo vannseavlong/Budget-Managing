@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { updateTransactionService } from '../../services/googleSheets/endpoints/transactions/updateTransactionService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { z } from 'zod';
@@ -14,24 +14,22 @@ export async function updateTransaction(
 ): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const { id } = req.params;
     const validatedData = updateTransactionSchema.parse(req.body);
 
-    const googleSheetsService = updateTransactionService;
-    googleSheetsService.setCredentials(googleCredentials);
-
-    // Check if transaction exists and belongs to this user
-    const existingTransaction = await googleSheetsService.findById(
+    const transactionsTable = await getUserTable(
+      email,
       spreadsheetId,
-      'transactions',
-      id
+      'transactions'
     );
 
-    if (
-      !existingTransaction ||
-      existingTransaction.user_id !== authenticatedReq.user!.email
-    ) {
+    // Check the transaction exists (it's already scoped to this user's own sheet)
+    const existingTransaction = await transactionsTable.findOne({
+      where: { id },
+    });
+
+    if (!existingTransaction) {
       res.status(404).json({
         success: false,
         message: 'Transaction not found',
@@ -39,18 +37,21 @@ export async function updateTransaction(
       return;
     }
 
-    // If category_id is being updated, verify the new category exists and belongs to this user
+    // If category_id is being updated, verify the new category exists
     if (
       validatedData.category_id &&
       validatedData.category_id !== existingTransaction.category_id
     ) {
-      const category = await googleSheetsService.findById(
+      const categoriesTable = await getUserTable(
+        email,
         spreadsheetId,
-        'categories',
-        validatedData.category_id
+        'categories'
       );
+      const category = await categoriesTable.findOne({
+        where: { id: validatedData.category_id },
+      });
 
-      if (!category || category.user_id !== authenticatedReq.user!.email) {
+      if (!category) {
         res.status(400).json({
           success: false,
           message: 'Invalid category ID or category does not belong to user',
@@ -65,19 +66,12 @@ export async function updateTransaction(
       updated_at: new Date().toISOString(),
     };
 
-    await googleSheetsService.update(
-      spreadsheetId,
-      'transactions',
-      id,
-      updateData
-    );
+    await transactionsTable.update({ where: { id }, data: updateData });
 
     // Get updated transaction
-    const updatedTransaction = await googleSheetsService.findById(
-      spreadsheetId,
-      'transactions',
-      id
-    );
+    const updatedTransaction = await transactionsTable.findOne({
+      where: { id },
+    });
 
     res.status(200).json({
       success: true,

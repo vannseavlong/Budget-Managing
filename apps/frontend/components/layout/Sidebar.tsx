@@ -14,6 +14,7 @@ import {
   LogOut,
   Calendar,
   PieChart,
+  ShieldCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -72,6 +73,14 @@ export function Sidebar({ className }: SidebarProps) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
 
+  const items =
+    user?.role === 'admin'
+      ? [
+          ...navigationItems,
+          { name: 'Admin', href: '/admin', icon: ShieldCheck, current: false },
+        ]
+      : navigationItems;
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -109,7 +118,7 @@ export function Sidebar({ className }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-3 py-4">
-        {navigationItems.map((item) => {
+        {items.map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link key={item.name} href={item.href}>

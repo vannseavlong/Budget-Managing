@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { checkGoalProgressService } from '../../services/googleSheets/endpoints/goals/checkGoalProgressService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { GoalPeriod } from './types';
@@ -13,16 +13,15 @@ export async function checkGoalProgress(
 ): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const { id } = req.params;
 
-    const googleSheetsService = checkGoalProgressService;
-    googleSheetsService.setCredentials(googleCredentials);
+    const goalsTable = await getUserTable(email, spreadsheetId, 'goals');
 
-    // Check if goal exists and belongs to this user
-    const goal = await googleSheetsService.findById(spreadsheetId, 'goals', id);
+    // Check the goal exists (it's already scoped to this user's own sheet)
+    const goal = await goalsTable.findOne({ where: { id } });
 
-    if (!goal || goal.user_id !== authenticatedReq.user!.email) {
+    if (!goal) {
       res.status(404).json({
         success: false,
         message: 'Goal not found',
@@ -64,11 +63,12 @@ export async function checkGoalProgress(
     }
 
     // Get transactions in this period
-    const transactions = await googleSheetsService.find(
+    const transactionsTable = await getUserTable(
+      email,
       spreadsheetId,
-      'transactions',
-      { user_id: authenticatedReq.user!.email }
+      'transactions'
     );
+    const transactions = await transactionsTable.findMany({});
 
     // Filter transactions by period and calculate total amount
     const periodTransactions = transactions.filter((transaction: any) => {

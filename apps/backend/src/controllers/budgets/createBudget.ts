@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createBudgetService } from '../../services/googleSheets/endpoints/budgets/createBudgetService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
@@ -12,22 +12,15 @@ import { createBudgetSchema } from './types';
 export async function createBudget(req: Request, res: Response): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const validatedData = createBudgetSchema.parse(req.body);
 
-    const googleSheetsService = createBudgetService;
-    googleSheetsService.setCredentials(googleCredentials);
+    const budgetsTable = await getUserTable(email, spreadsheetId, 'budgets');
 
     // Check if budget for same year/month already exists for this user
-    const existingBudgets = await googleSheetsService.find(
-      spreadsheetId,
-      'budgets',
-      {
-        user_id: authenticatedReq.user!.email,
-        year: validatedData.year.toString(),
-        month: validatedData.month.toString(),
-      }
-    );
+    const existingBudgets = await budgetsTable.findMany({
+      where: { year: validatedData.year, month: validatedData.month },
+    });
 
     if (existingBudgets.length > 0) {
       res.status(400).json({
@@ -43,13 +36,12 @@ export async function createBudget(req: Request, res: Response): Promise<void> {
       year: validatedData.year,
       month: validatedData.month,
       income: validatedData.income,
-      user_id: authenticatedReq.user!.email,
+      user_id: email,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
 
-    // Insert into Google Sheets
-    await googleSheetsService.insert(spreadsheetId, 'budgets', newBudget);
+    await budgetsTable.create(newBudget);
 
     res.status(201).json({
       success: true,

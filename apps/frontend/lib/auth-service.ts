@@ -13,6 +13,7 @@ export interface User {
   provider: 'google';
   telegram_username?: string;
   chatId?: string;
+  role?: 'admin' | 'user';
 }
 
 export interface AuthResponse {
@@ -81,6 +82,7 @@ class AuthService {
         email: userData.email,
         name: userData.name,
         provider: 'google', // Default to google since that's our only provider
+        role: userData.role,
       };
 
       this.saveUser(user);

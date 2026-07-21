@@ -11,7 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Wallet, Bell, Search, LogOut, User } from 'lucide-react';
+import { Wallet, Bell, Search, LogOut, User, ShieldCheck } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface TopbarProps {
   className?: string;
@@ -20,6 +21,7 @@ interface TopbarProps {
 
 export function Topbar({ className, title }: TopbarProps) {
   const { user, logout } = useAuth();
+  const router = useRouter();
 
   const handleLogout = async () => {
     try {
@@ -102,6 +104,12 @@ export function Topbar({ className, title }: TopbarProps) {
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>
+              {user?.role === 'admin' && (
+                <DropdownMenuItem onClick={() => router.push('/admin')}>
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  <span>Admin</span>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-red-600">
                 <LogOut className="mr-2 h-4 w-4" />

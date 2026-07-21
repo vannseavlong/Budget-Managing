@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { updateIncomeService } from '../../services/googleSheets/endpoints/budgets/updateIncomeService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { z } from 'zod';
@@ -17,36 +17,20 @@ const updateIncomeSchema = z.object({
 export async function updateIncome(req: Request, res: Response) {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const { id } = req.params;
     const validated = updateIncomeSchema.parse(req.body);
 
-    const googleSheetsService = updateIncomeService;
-    googleSheetsService.setCredentials(googleCredentials);
-
-    // Ensure the incomes table exists
-    await googleSheetsService.ensureTableExists(spreadsheetId, {
-      name: 'budget_incomes',
-      columns: [
-        'id',
-        'user_id',
-        'year',
-        'month',
-        'amount',
-        'source',
-        'created_at',
-        'updated_at',
-      ],
-    });
-
-    // Verify ownership
-    const existing = await googleSheetsService.find(
+    const incomesTable = await getUserTable(
+      email,
       spreadsheetId,
-      'budget_incomes',
-      { id, user_id: authenticatedReq.user!.email }
+      'budget_incomes'
     );
 
-    if (!existing || existing.length === 0) {
+    // Check the income exists (it's already scoped to this user's own sheet)
+    const existing = await incomesTable.findOne({ where: { id } });
+
+    if (!existing) {
       res.status(404).json({
         success: false,
         message: 'Income not found',
@@ -61,12 +45,7 @@ export async function updateIncome(req: Request, res: Response) {
       source: validated.source || '',
     };
 
-    await googleSheetsService.update(
-      spreadsheetId,
-      'budget_incomes',
-      id,
-      updatedRecord
-    );
+    await incomesTable.update({ where: { id }, data: updatedRecord });
 
     res.status(200).json({
       success: true,

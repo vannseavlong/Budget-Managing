@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { deleteBudgetService } from '../../services/googleSheets/endpoints/budgets/deleteBudgetService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -9,23 +9,15 @@ import { AuthenticatedRequest } from '../../middleware/auth';
 export async function deleteBudget(req: Request, res: Response): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const { id } = req.params;
 
-    const googleSheetsService = deleteBudgetService;
-    googleSheetsService.setCredentials(googleCredentials);
+    const budgetsTable = await getUserTable(email, spreadsheetId, 'budgets');
 
-    // Check if budget exists and belongs to this user
-    const existingBudget = await googleSheetsService.findById(
-      spreadsheetId,
-      'budgets',
-      id
-    );
+    // Check the budget exists (it's already scoped to this user's own sheet)
+    const existingBudget = await budgetsTable.findOne({ where: { id } });
 
-    if (
-      !existingBudget ||
-      existingBudget.user_id !== authenticatedReq.user!.email
-    ) {
+    if (!existingBudget) {
       res.status(404).json({
         success: false,
         message: 'Budget not found',
@@ -34,26 +26,21 @@ export async function deleteBudget(req: Request, res: Response): Promise<void> {
     }
 
     // Delete all budget items associated with this budget first
-    const budgetItems = await googleSheetsService.find(
+    const budgetItemsTable = await getUserTable(
+      email,
       spreadsheetId,
-      'budget_items',
-      {
-        user_id: authenticatedReq.user!.email,
-        budget_id: id,
-      }
+      'budget_items'
     );
+    const budgetItems = await budgetItemsTable.findMany({
+      where: { budget_id: id },
+    });
 
-    // Delete all budget items
     for (const item of budgetItems) {
-      await googleSheetsService.delete(
-        spreadsheetId,
-        'budget_items',
-        item.id as string
-      );
+      await budgetItemsTable.delete({ where: { id: item.id as string } });
     }
 
     // Delete the budget
-    await googleSheetsService.delete(spreadsheetId, 'budgets', id);
+    await budgetsTable.delete({ where: { id } });
 
     res.status(200).json({
       success: true,

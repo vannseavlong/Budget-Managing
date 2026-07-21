@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { logger } from '../../utils/logger';
-import { getCategoriesService } from '../../services/googleSheets/endpoints/categories/getCategoriesService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
 interface CategoryData {
@@ -110,20 +110,13 @@ export async function getCategories(
 ): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
 
-    const googleSheetsService = getCategoriesService;
-    googleSheetsService.setCredentials(googleCredentials);
+    const categoriesTable = await getUserTable(email, spreadsheetId, 'categories');
 
-    // Ensure categories sheet has emoji column for migration
-    await googleSheetsService.ensureCategoriesSchema(spreadsheetId);
-
-    // Get all categories for this user
-    const categories = await googleSheetsService.find(
-      spreadsheetId,
-      'categories',
-      { user_id: authenticatedReq.user!.email } // Filter by user
-    );
+    // No user_id filter needed: actorSheetId already scopes this table to
+    // exactly this user's own spreadsheet.
+    const categories = await categoriesTable.findMany({});
 
     // Migration logic: Add emoji to categories that don't have one
     const updatedCategories = await Promise.all(
@@ -144,12 +137,10 @@ export async function getCategories(
 
           // Update the category in Google Sheets
           try {
-            await googleSheetsService.update(
-              spreadsheetId,
-              'categories',
-              categoryData.id,
-              { emoji }
-            );
+            await categoriesTable.update({
+              where: { id: categoryData.id },
+              data: { emoji },
+            });
 
             // Return updated category
             return { ...categoryData, emoji };

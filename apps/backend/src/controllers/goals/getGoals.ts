@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getGoalsService } from '../../services/googleSheets/endpoints/goals/getGoalsService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -9,17 +9,13 @@ import { AuthenticatedRequest } from '../../middleware/auth';
 export async function getGoals(req: Request, res: Response): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
 
-    const googleSheetsService = getGoalsService;
-    googleSheetsService.setCredentials(googleCredentials);
+    const goalsTable = await getUserTable(email, spreadsheetId, 'goals');
 
-    // Get all goals for this user
-    const goals = await googleSheetsService.find(
-      spreadsheetId,
-      'goals',
-      { user_id: authenticatedReq.user!.email } // Filter by user
-    );
+    // No user_id filter needed: actorSheetId already scopes this table to
+    // exactly this user's own spreadsheet.
+    const goals = await goalsTable.findMany({});
 
     res.status(200).json({
       success: true,

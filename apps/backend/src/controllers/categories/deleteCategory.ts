@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { deleteCategoryService } from '../../services/googleSheets/endpoints/categories/deleteCategoryService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -12,23 +12,15 @@ export async function deleteCategory(
 ): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const { id } = req.params;
 
-    const googleSheetsService = deleteCategoryService;
-    googleSheetsService.setCredentials(googleCredentials);
+    const categoriesTable = await getUserTable(email, spreadsheetId, 'categories');
 
-    // Check if category exists and belongs to this user
-    const existingCategory = await googleSheetsService.findById(
-      spreadsheetId,
-      'categories',
-      id
-    );
+    // Check the category exists (it's already scoped to this user's own sheet)
+    const existingCategory = await categoriesTable.findOne({ where: { id } });
 
-    if (
-      !existingCategory ||
-      existingCategory.user_id !== authenticatedReq.user!.email
-    ) {
+    if (!existingCategory) {
       res.status(404).json({
         success: false,
         message: 'Category not found',
@@ -37,7 +29,7 @@ export async function deleteCategory(
     }
 
     // Delete the category
-    await googleSheetsService.delete(spreadsheetId, 'categories', id);
+    await categoriesTable.delete({ where: { id } });
 
     res.status(200).json({
       success: true,

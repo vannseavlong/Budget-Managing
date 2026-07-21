@@ -6,6 +6,10 @@ import { authCallbackSchema } from './types';
 import { getPendingUser, removePendingUser } from '../otp-auth';
 import { GoogleSheetsOTPAdapter } from '../../services/google-sheets-otp-adapter';
 import { getAuthenticatedClient } from '../../services/googleSheets/client';
+import { isAdminEmail } from '../../utils/adminRole';
+import { storeAdminTokens } from '../../services/sheetDb/adapter';
+import { recordLogin } from '../../services/sheetDb/adminStats';
+import { ensureAdminSheetAccess } from '../../services/sheetDb/ensureAdminSheetAccess';
 
 /**
  * Handle OAuth callback and create user database
@@ -75,6 +79,43 @@ export async function handleCallback(
     // Get the first (and should be only) user record
     const userRecord = userData[0];
 
+    // Role is computed from an env allowlist, never persisted as a source
+    // of truth (see utils/adminRole.ts).
+    const role = isAdminEmail(userInfo.email) ? 'admin' : 'user';
+
+    if (
+      process.env.SUPER_ADMIN_EMAIL &&
+      userInfo.email === process.env.SUPER_ADMIN_EMAIL
+    ) {
+      // The sheet-db adapter is backed by exactly one Google identity
+      // (SUPER_ADMIN_EMAIL) — distinct from the broader ADMIN_EMAILS
+      // allowlist used for app-level `role` (a multi-admin ADMIN_EMAILS
+      // list would otherwise clobber this with whichever admin logged in
+      // last). Bootstraps/refreshes that one identity's tokens.
+      // Best-effort: a failure here must not block the admin's own login.
+      storeAdminTokens(credentials).catch((error) => {
+        logger.error('Failed to store admin sheet-db tokens:', error);
+      });
+    } else {
+      // Legacy/existing user sheets were created before this app adopted
+      // longcelot-sheet-db and were never shared with the admin account —
+      // lsdb's adapter always reads/writes through the one admin identity
+      // above, so grant it editor access here (idempotent) using this
+      // user's own credentials. Best-effort: never blocks login.
+      ensureAdminSheetAccess(credentials, spreadsheetId).catch((error) => {
+        logger.error('Failed to ensure admin sheet-db access:', error);
+      });
+    }
+
+    // Fire-and-forget: records the login in the admin-only user_stats
+    // table (aggregate counts for the admin dashboard). Never touches the
+    // user's own spreadsheet and never blocks login on failure.
+    recordLogin(
+      (userRecord?.id as string | undefined) || userInfo.email,
+      userInfo.email,
+      role
+    );
+
     // Generate JWT token for our application
     const jwtSecret =
       process.env.JWT_SECRET ||
@@ -91,6 +132,7 @@ export async function handleCallback(
       telegram_username: userRecord?.telegram_username || '',
       chatId: userRecord?.chatId || '',
       googleCredentials: credentials,
+      role,
     };
 
     // Convert expires string to seconds for JWT

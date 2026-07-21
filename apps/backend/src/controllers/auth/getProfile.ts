@@ -45,6 +45,7 @@ export async function getProfile(req: Request, res: Response): Promise<void> {
         telegram_username: currentUser.telegram_username || null,
         chatId: currentUser.chatId || null,
         spreadsheetId: user.spreadsheetId,
+        role: user.role,
       },
       message: 'Profile retrieved successfully',
     });

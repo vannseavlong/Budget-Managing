@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getIncomeSumService } from '../../services/googleSheets/endpoints/budgets/getIncomeSumService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -10,7 +10,7 @@ import { AuthenticatedRequest } from '../../middleware/auth';
 export async function getIncomeSum(req: Request, res: Response) {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
 
     const year = Number(req.query.year);
     const month = Number(req.query.month);
@@ -22,34 +22,13 @@ export async function getIncomeSum(req: Request, res: Response) {
       return;
     }
 
-    const googleSheetsService = getIncomeSumService;
-    googleSheetsService.setCredentials(googleCredentials);
-
-    // find incomes for this user and month/year
-    // Ensure the incomes table exists (creates headers if missing)
-    await googleSheetsService.ensureTableExists(spreadsheetId, {
-      name: 'budget_incomes',
-      columns: [
-        'id',
-        'user_id',
-        'year',
-        'month',
-        'amount',
-        'source',
-        'created_at',
-        'updated_at',
-      ],
-    });
-
-    const records = await googleSheetsService.find(
+    const incomesTable = await getUserTable(
+      email,
       spreadsheetId,
-      'budget_incomes',
-      {
-        user_id: authenticatedReq.user!.email,
-        year: String(year),
-        month: String(month),
-      }
+      'budget_incomes'
     );
+
+    const records = await incomesTable.findMany({ where: { year, month } });
 
     const total = records.reduce((sum, r) => {
       const a = parseFloat(String(r.amount || 0)) || 0;

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getTransactionsService } from '../../services/googleSheets/endpoints/transactions/getTransactionsService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { TransactionQueryParams } from './types';
@@ -13,7 +13,7 @@ export async function getTransactions(
 ): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
 
     const {
       page = 1,
@@ -23,24 +23,22 @@ export async function getTransactions(
       date_to,
     } = req.query as any as TransactionQueryParams;
 
-    const googleSheetsService = getTransactionsService;
-    googleSheetsService.setCredentials(googleCredentials);
+    const transactionsTable = await getUserTable(
+      email,
+      spreadsheetId,
+      'transactions'
+    );
 
-    // Build filter criteria
-    const filterCriteria: any = {
-      user_id: authenticatedReq.user!.email,
-    };
-
+    // No user_id filter needed: actorSheetId already scopes this table to
+    // exactly this user's own spreadsheet.
+    const filterCriteria: Record<string, unknown> = {};
     if (category_id) {
       filterCriteria.category_id = category_id;
     }
 
-    // Get all transactions for this user with filters
-    let transactions = await googleSheetsService.find(
-      spreadsheetId,
-      'transactions',
-      filterCriteria
-    );
+    let transactions = await transactionsTable.findMany({
+      where: filterCriteria,
+    });
 
     // Apply date filters if provided
     if (date_from || date_to) {

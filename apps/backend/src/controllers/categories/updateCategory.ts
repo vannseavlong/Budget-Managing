@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { updateCategoryService } from '../../services/googleSheets/endpoints/categories/updateCategoryService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { z } from 'zod';
@@ -14,24 +14,16 @@ export async function updateCategory(
 ): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const { id } = req.params;
     const validatedData = updateCategorySchema.parse(req.body);
 
-    const googleSheetsService = updateCategoryService;
-    googleSheetsService.setCredentials(googleCredentials);
+    const categoriesTable = await getUserTable(email, spreadsheetId, 'categories');
 
-    // Check if category exists and belongs to this user
-    const existingCategory = await googleSheetsService.findById(
-      spreadsheetId,
-      'categories',
-      id
-    );
+    // Check the category exists (it's already scoped to this user's own sheet)
+    const existingCategory = await categoriesTable.findOne({ where: { id } });
 
-    if (
-      !existingCategory ||
-      existingCategory.user_id !== authenticatedReq.user!.email
-    ) {
+    if (!existingCategory) {
       res.status(404).json({
         success: false,
         message: 'Category not found',
@@ -41,14 +33,9 @@ export async function updateCategory(
 
     // Check if new name conflicts with existing categories (if name is being updated)
     if (validatedData.name && validatedData.name !== existingCategory.name) {
-      const conflictingCategories = await googleSheetsService.find(
-        spreadsheetId,
-        'categories',
-        {
-          user_id: authenticatedReq.user!.email,
-          name: validatedData.name,
-        }
-      );
+      const conflictingCategories = await categoriesTable.findMany({
+        where: { name: validatedData.name },
+      });
 
       if (conflictingCategories.length > 0) {
         res.status(400).json({
@@ -65,19 +52,10 @@ export async function updateCategory(
       updated_at: new Date().toISOString(),
     };
 
-    await googleSheetsService.update(
-      spreadsheetId,
-      'categories',
-      id,
-      updateData
-    );
+    await categoriesTable.update({ where: { id }, data: updateData });
 
     // Get updated category
-    const updatedCategory = await googleSheetsService.findById(
-      spreadsheetId,
-      'categories',
-      id
-    );
+    const updatedCategory = await categoriesTable.findOne({ where: { id } });
 
     res.status(200).json({
       success: true,

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createTransactionService } from '../../services/googleSheets/endpoints/transactions/createTransactionService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
@@ -15,20 +15,23 @@ export async function createTransaction(
 ): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const validatedData = createTransactionSchema.parse(req.body);
 
-    const googleSheetsService = createTransactionService;
-    googleSheetsService.setCredentials(googleCredentials);
-
-    // Verify that the category exists and belongs to this user
-    const category = await googleSheetsService.findById(
+    const categoriesTable = await getUserTable(email, spreadsheetId, 'categories');
+    const transactionsTable = await getUserTable(
+      email,
       spreadsheetId,
-      'categories',
-      validatedData.category_id
+      'transactions'
     );
 
-    if (!category || category.user_id !== authenticatedReq.user!.email) {
+    // Verify that the category exists (it's already scoped to this user's
+    // own sheet — no separate ownership check needed)
+    const category = await categoriesTable.findOne({
+      where: { id: validatedData.category_id },
+    });
+
+    if (!category) {
       res.status(400).json({
         success: false,
         message: 'Invalid category ID or category does not belong to user',
@@ -47,17 +50,12 @@ export async function createTransaction(
       time: validatedData.time || '',
       notes: validatedData.notes || '',
       receipt_url: validatedData.receipt_url || '',
-      user_id: authenticatedReq.user!.email,
+      user_id: email,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
 
-    // Insert into Google Sheets
-    await googleSheetsService.insert(
-      spreadsheetId,
-      'transactions',
-      newTransaction
-    );
+    await transactionsTable.create(newTransaction);
 
     res.status(201).json({
       success: true,

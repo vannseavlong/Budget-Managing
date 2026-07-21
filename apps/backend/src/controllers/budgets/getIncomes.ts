@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getIncomesService } from '../../services/googleSheets/endpoints/budgets/getIncomesService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -9,31 +9,18 @@ import { AuthenticatedRequest } from '../../middleware/auth';
 export async function getIncomes(req: Request, res: Response) {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
 
-    const googleSheetsService = getIncomesService;
-    googleSheetsService.setCredentials(googleCredentials);
-
-    // Ensure the incomes table exists
-    await googleSheetsService.ensureTableExists(spreadsheetId, {
-      name: 'budget_incomes',
-      columns: [
-        'id',
-        'user_id',
-        'year',
-        'month',
-        'amount',
-        'source',
-        'created_at',
-        'updated_at',
-      ],
-    });
-
-    const incomes = await googleSheetsService.find(
+    const incomesTable = await getUserTable(
+      email,
       spreadsheetId,
-      'budget_incomes',
-      { user_id: authenticatedReq.user!.email }
+      'budget_incomes'
     );
+
+    // No user_id filter needed: actorSheetId already scopes this table to
+    // exactly this user's own spreadsheet. Table creation is handled by
+    // onSchemaMismatch: 'auto-sync' instead of an explicit ensure call.
+    const incomes = await incomesTable.findMany({});
 
     res.status(200).json({ success: true, data: incomes });
   } catch (error) {

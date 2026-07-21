@@ -22,6 +22,7 @@ import settingsRoutes from './routes/settings';
 import telegramRoutes from './routes/telegram';
 import sheetsRoutes from './routes/sheets';
 import otpAuthRoutes from './routes/otp-auth';
+import adminRoutes from './routes/admin';
 
 // Import OTP service
 import { initializeOtpService } from './services/otp-auth-service';
@@ -96,6 +97,7 @@ app.use('/api/v1/settings', settingsRoutes);
 app.use('/api/v1/telegram', telegramRoutes);
 app.use('/api/v1/sheets', sheetsRoutes);
 app.use('/api/v1/otp-auth', otpAuthRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 // Root endpoint for ngrok tunnel verification
 app.get('/', (req, res) => {

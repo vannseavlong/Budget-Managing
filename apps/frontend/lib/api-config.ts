@@ -85,6 +85,11 @@ export const API_ENDPOINTS = {
     EXPORT: `${API_BASE_URL}/api/v1/data/export`,
     IMPORT: `${API_BASE_URL}/api/v1/data/import`,
   },
+
+  // Admin-only endpoints
+  ADMIN: {
+    STATS: `${API_BASE_URL}/api/v1/admin/stats`,
+  },
 } as const;
 
 export default API_ENDPOINTS;

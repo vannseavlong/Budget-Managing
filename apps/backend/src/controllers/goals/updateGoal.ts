@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { updateGoalService } from '../../services/googleSheets/endpoints/goals/updateGoalService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { z } from 'zod';
@@ -11,24 +11,16 @@ import { updateGoalSchema } from './types';
 export async function updateGoal(req: Request, res: Response): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const { id } = req.params;
     const validatedData = updateGoalSchema.parse(req.body);
 
-    const googleSheetsService = updateGoalService;
-    googleSheetsService.setCredentials(googleCredentials);
+    const goalsTable = await getUserTable(email, spreadsheetId, 'goals');
 
-    // Check if goal exists and belongs to this user
-    const existingGoal = await googleSheetsService.findById(
-      spreadsheetId,
-      'goals',
-      id
-    );
+    // Check the goal exists (it's already scoped to this user's own sheet)
+    const existingGoal = await goalsTable.findOne({ where: { id } });
 
-    if (
-      !existingGoal ||
-      existingGoal.user_id !== authenticatedReq.user!.email
-    ) {
+    if (!existingGoal) {
       res.status(404).json({
         success: false,
         message: 'Goal not found',
@@ -38,14 +30,9 @@ export async function updateGoal(req: Request, res: Response): Promise<void> {
 
     // Check if new name conflicts with existing goals (if name is being updated)
     if (validatedData.name && validatedData.name !== existingGoal.name) {
-      const conflictingGoals = await googleSheetsService.find(
-        spreadsheetId,
-        'goals',
-        {
-          user_id: authenticatedReq.user!.email,
-          name: validatedData.name,
-        }
-      );
+      const conflictingGoals = await goalsTable.findMany({
+        where: { name: validatedData.name },
+      });
 
       if (conflictingGoals.length > 0) {
         res.status(400).json({
@@ -62,14 +49,10 @@ export async function updateGoal(req: Request, res: Response): Promise<void> {
       updated_at: new Date().toISOString(),
     };
 
-    await googleSheetsService.update(spreadsheetId, 'goals', id, updateData);
+    await goalsTable.update({ where: { id }, data: updateData });
 
     // Get updated goal
-    const updatedGoal = await googleSheetsService.findById(
-      spreadsheetId,
-      'goals',
-      id
-    );
+    const updatedGoal = await goalsTable.findOne({ where: { id } });
 
     res.status(200).json({
       success: true,

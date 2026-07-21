@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { logger } from '../../utils/logger';
 import { sendTelegramMessageSchema, getBotToken } from './types';
-import { sendMessageService } from '../../services/googleSheets/endpoints/telegram/sendMessageService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { z } from 'zod';
 
@@ -16,7 +16,7 @@ interface TelegramApiResponse {
 export async function sendMessage(req: Request, res: Response): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const validatedData = sendTelegramMessageSchema.parse(req.body);
     const botToken = getBotToken();
 
@@ -88,27 +88,27 @@ export async function sendMessage(req: Request, res: Response): Promise<void> {
 
     // Save message to Google Sheets database
     try {
-      const googleSheetsService = sendMessageService;
-      // attach user's credentials for any user-scoped operations
-      googleSheetsService.setCredentials(googleCredentials);
+      const messagesTable = await getUserTable(
+        email,
+        spreadsheetId,
+        'telegram_messages'
+      );
 
       const messageData = {
         id: messageId,
-        user_id: authenticatedReq.user!.email,
+        user_id: email,
         chat_id: validatedData.chat_id,
         payload: JSON.stringify(validatedData.payload),
         status: status,
-        error: error,
-        telegram_message_id: telegramMessageId,
-        sent_at: sentAt,
+        // Optional columns must be omitted rather than passed as `null`
+        error: error ?? undefined,
+        telegram_message_id:
+          telegramMessageId !== null ? String(telegramMessageId) : undefined,
+        sent_at: sentAt ?? undefined,
         created_at: now,
       };
 
-      await googleSheetsService.insert(
-        spreadsheetId,
-        'telegram_messages',
-        messageData
-      );
+      await messagesTable.create(messageData);
 
       logger.info(`Telegram message saved to database: ${messageId}`);
     } catch (dbError) {

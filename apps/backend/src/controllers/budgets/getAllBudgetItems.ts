@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getAllBudgetItemsService } from '../../services/googleSheets/endpoints/budgets/getAllBudgetItemsService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { DatabaseRecord } from '../../services/googleSheets/types';
 import { AuthenticatedRequest } from '../../middleware/auth';
@@ -14,22 +14,25 @@ export async function getAllBudgetItems(
 ): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const { budget_id } = req.query;
 
-    const googleSheetsService = getAllBudgetItemsService;
-    googleSheetsService.setCredentials(googleCredentials);
+    const budgetsTable = await getUserTable(email, spreadsheetId, 'budgets');
+    const budgetItemsTable = await getUserTable(
+      email,
+      spreadsheetId,
+      'budget_items'
+    );
 
     let budgetItems: DatabaseRecord[] = [];
 
     if (budget_id && typeof budget_id === 'string' && budget_id.trim()) {
-      // If budget_id provided, verify the budget belongs to the user first
-      const budget = await googleSheetsService.findById(
-        spreadsheetId,
-        'budgets',
-        budget_id
-      );
-      if (!budget || budget.user_id !== authenticatedReq.user!.email) {
+      // If budget_id provided, verify the budget exists first (it's already
+      // scoped to this user's own sheet)
+      const budget = await budgetsTable.findOne({
+        where: { id: budget_id },
+      });
+      if (!budget) {
         res.status(404).json({
           success: false,
           message: 'Budget not found',
@@ -37,32 +40,18 @@ export async function getAllBudgetItems(
         return;
       }
 
-      // Fetch items for the given budget_id (don't filter by user_id; sheet doesn't store it)
-      budgetItems = await googleSheetsService.find(
-        spreadsheetId,
-        'budget_items',
-        {
-          budget_id,
-        }
-      );
+      budgetItems = await budgetItemsTable.findMany({
+        where: { budget_id },
+      });
     } else {
-      // No budget_id: return items for all budgets that belong to the authenticated user
-      const userBudgets: DatabaseRecord[] = await googleSheetsService.find(
-        spreadsheetId,
-        'budgets',
-        {
-          user_id: authenticatedReq.user!.email,
-        }
-      );
+      // No budget_id: return items for all of this user's budgets
+      const userBudgets: DatabaseRecord[] = await budgetsTable.findMany({});
       const budgetIds = new Set(
         userBudgets.map((b: DatabaseRecord) => String(b.id))
       );
 
       // Get all budget_items then filter in-memory by budget_id belonging to the user
-      const allItems: DatabaseRecord[] = await googleSheetsService.find(
-        spreadsheetId,
-        'budget_items'
-      );
+      const allItems: DatabaseRecord[] = await budgetItemsTable.findMany({});
       budgetItems = allItems.filter((it: DatabaseRecord) =>
         budgetIds.has(String(it.budget_id))
       );

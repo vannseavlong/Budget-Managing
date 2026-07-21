@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createGoalService } from '../../services/googleSheets/endpoints/goals/createGoalService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
@@ -12,21 +12,15 @@ import { createGoalSchema } from './types';
 export async function createGoal(req: Request, res: Response): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const validatedData = createGoalSchema.parse(req.body);
 
-    const googleSheetsService = createGoalService;
-    googleSheetsService.setCredentials(googleCredentials);
+    const goalsTable = await getUserTable(email, spreadsheetId, 'goals');
 
     // Check if goal with same name already exists for this user
-    const existingGoals = await googleSheetsService.find(
-      spreadsheetId,
-      'goals',
-      {
-        user_id: authenticatedReq.user!.email,
-        name: validatedData.name,
-      }
-    );
+    const existingGoals = await goalsTable.findMany({
+      where: { name: validatedData.name },
+    });
 
     if (existingGoals.length > 0) {
       res.status(400).json({
@@ -43,13 +37,12 @@ export async function createGoal(req: Request, res: Response): Promise<void> {
       limit_amount: validatedData.limit_amount,
       period: validatedData.period,
       notify_telegram: validatedData.notify_telegram,
-      user_id: authenticatedReq.user!.email,
+      user_id: email,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
 
-    // Insert into Google Sheets
-    await googleSheetsService.insert(spreadsheetId, 'goals', newGoal);
+    await goalsTable.create(newGoal);
 
     res.status(201).json({
       success: true,

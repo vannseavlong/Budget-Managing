@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createBudgetItemService } from '../../services/googleSheets/endpoints/budgets/createBudgetItemService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
@@ -15,20 +15,22 @@ export async function createBudgetItem(
 ): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const validatedData = createBudgetItemSchema.parse(req.body);
 
-    const googleSheetsService = createBudgetItemService;
-    googleSheetsService.setCredentials(googleCredentials);
-
-    // Verify the budget exists and belongs to this user (1 API call)
-    const budget = await googleSheetsService.findById(
+    const budgetsTable = await getUserTable(email, spreadsheetId, 'budgets');
+    const budgetItemsTable = await getUserTable(
+      email,
       spreadsheetId,
-      'budgets',
-      validatedData.budget_id
+      'budget_items'
     );
 
-    if (!budget || budget.user_id !== authenticatedReq.user!.email) {
+    // Verify the budget exists (it's already scoped to this user's own sheet)
+    const budget = await budgetsTable.findOne({
+      where: { id: validatedData.budget_id },
+    });
+
+    if (!budget) {
       res.status(400).json({
         success: false,
         message: 'Invalid budget ID or budget does not belong to user',
@@ -56,12 +58,7 @@ export async function createBudgetItem(
       updated_at: new Date().toISOString(),
     };
 
-    // Insert into Google Sheets
-    await googleSheetsService.insert(
-      spreadsheetId,
-      'budget_items',
-      newBudgetItem
-    );
+    await budgetItemsTable.create(newBudgetItem);
 
     res.status(201).json({
       success: true,

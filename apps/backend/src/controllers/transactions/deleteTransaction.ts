@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { deleteTransactionService } from '../../services/googleSheets/endpoints/transactions/deleteTransactionService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -12,23 +12,21 @@ export async function deleteTransaction(
 ): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const { id } = req.params;
 
-    const googleSheetsService = deleteTransactionService;
-    googleSheetsService.setCredentials(googleCredentials);
-
-    // Check if transaction exists and belongs to this user
-    const existingTransaction = await googleSheetsService.findById(
+    const transactionsTable = await getUserTable(
+      email,
       spreadsheetId,
-      'transactions',
-      id
+      'transactions'
     );
 
-    if (
-      !existingTransaction ||
-      existingTransaction.user_id !== authenticatedReq.user!.email
-    ) {
+    // Check the transaction exists (it's already scoped to this user's own sheet)
+    const existingTransaction = await transactionsTable.findOne({
+      where: { id },
+    });
+
+    if (!existingTransaction) {
       res.status(404).json({
         success: false,
         message: 'Transaction not found',
@@ -37,7 +35,7 @@ export async function deleteTransaction(
     }
 
     // Delete the transaction
-    await googleSheetsService.delete(spreadsheetId, 'transactions', id);
+    await transactionsTable.delete({ where: { id } });
 
     res.status(200).json({
       success: true,

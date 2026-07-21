@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getBudgetsService } from '../../services/googleSheets/endpoints/budgets/getBudgetsService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { BudgetQueryParams } from './types';
@@ -10,31 +10,18 @@ import { BudgetQueryParams } from './types';
 export async function getBudgets(req: Request, res: Response): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const { year, month } = req.query as any as BudgetQueryParams;
 
-    const googleSheetsService = getBudgetsService;
-    googleSheetsService.setCredentials(googleCredentials);
+    const budgetsTable = await getUserTable(email, spreadsheetId, 'budgets');
 
-    // Build filter criteria
-    const filterCriteria: any = {
-      user_id: authenticatedReq.user!.email,
-    };
+    // No user_id filter needed: actorSheetId already scopes this table to
+    // exactly this user's own spreadsheet.
+    const filterCriteria: Record<string, unknown> = {};
+    if (year) filterCriteria.year = Number(year);
+    if (month) filterCriteria.month = Number(month);
 
-    if (year) {
-      filterCriteria.year = year.toString();
-    }
-
-    if (month) {
-      filterCriteria.month = month.toString();
-    }
-
-    // Get all budgets for this user with filters
-    const budgets = await googleSheetsService.find(
-      spreadsheetId,
-      'budgets',
-      filterCriteria
-    );
+    const budgets = await budgetsTable.findMany({ where: filterCriteria });
 
     // Sort by year and month (newest first)
     budgets.sort((a: any, b: any) => {

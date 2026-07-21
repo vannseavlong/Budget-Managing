@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { updateBudgetService } from '../../services/googleSheets/endpoints/budgets/updateBudgetService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { z } from 'zod';
@@ -11,24 +11,16 @@ import { updateBudgetSchema } from './types';
 export async function updateBudget(req: Request, res: Response): Promise<void> {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const { id } = req.params;
     const validatedData = updateBudgetSchema.parse(req.body);
 
-    const googleSheetsService = updateBudgetService;
-    googleSheetsService.setCredentials(googleCredentials);
+    const budgetsTable = await getUserTable(email, spreadsheetId, 'budgets');
 
-    // Check if budget exists and belongs to this user
-    const existingBudget = await googleSheetsService.findById(
-      spreadsheetId,
-      'budgets',
-      id
-    );
+    // Check the budget exists (it's already scoped to this user's own sheet)
+    const existingBudget = await budgetsTable.findOne({ where: { id } });
 
-    if (
-      !existingBudget ||
-      existingBudget.user_id !== authenticatedReq.user!.email
-    ) {
+    if (!existingBudget) {
       res.status(404).json({
         success: false,
         message: 'Budget not found',
@@ -39,24 +31,16 @@ export async function updateBudget(req: Request, res: Response): Promise<void> {
     // Check if new year/month conflicts with existing budgets (if year or month is being updated)
     if (
       (validatedData.year &&
-        validatedData.year !== parseInt(existingBudget.year as string)) ||
+        validatedData.year !== (existingBudget.year as number)) ||
       (validatedData.month &&
-        validatedData.month !== parseInt(existingBudget.month as string))
+        validatedData.month !== (existingBudget.month as number))
     ) {
-      const newYear =
-        validatedData.year || parseInt(existingBudget.year as string);
-      const newMonth =
-        validatedData.month || parseInt(existingBudget.month as string);
+      const newYear = validatedData.year || (existingBudget.year as number);
+      const newMonth = validatedData.month || (existingBudget.month as number);
 
-      const conflictingBudgets = await googleSheetsService.find(
-        spreadsheetId,
-        'budgets',
-        {
-          user_id: authenticatedReq.user!.email,
-          year: newYear.toString(),
-          month: newMonth.toString(),
-        }
-      );
+      const conflictingBudgets = await budgetsTable.findMany({
+        where: { year: newYear, month: newMonth },
+      });
 
       // Filter out the current budget from conflicts
       const actualConflicts = conflictingBudgets.filter(
@@ -78,14 +62,10 @@ export async function updateBudget(req: Request, res: Response): Promise<void> {
       updated_at: new Date().toISOString(),
     };
 
-    await googleSheetsService.update(spreadsheetId, 'budgets', id, updateData);
+    await budgetsTable.update({ where: { id }, data: updateData });
 
     // Get updated budget
-    const updatedBudget = await googleSheetsService.findById(
-      spreadsheetId,
-      'budgets',
-      id
-    );
+    const updatedBudget = await budgetsTable.findOne({ where: { id } });
 
     res.status(200).json({
       success: true,

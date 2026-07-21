@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createIncomeService } from '../../services/googleSheets/endpoints/budgets/createIncomeService';
+import { getUserTable } from '../../services/sheetDb/userContext';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
@@ -12,15 +12,12 @@ import { createIncomeSchema } from './types';
 export async function createBudgetIncome(req: Request, res: Response) {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
-    const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
+    const { spreadsheetId, email } = authenticatedReq.user!;
     const validated = createIncomeSchema.parse(req.body);
-
-    const googleSheetsService = createIncomeService;
-    googleSheetsService.setCredentials(googleCredentials);
 
     const newRecord = {
       id: uuidv4(),
-      user_id: authenticatedReq.user!.email,
+      user_id: email,
       year: validated.year,
       month: validated.month,
       amount: validated.amount,
@@ -29,26 +26,12 @@ export async function createBudgetIncome(req: Request, res: Response) {
       updated_at: new Date().toISOString(),
     };
 
-    // Ensure the incomes table exists and has headers
-    await googleSheetsService.ensureTableExists(spreadsheetId, {
-      name: 'budget_incomes',
-      columns: [
-        'id',
-        'user_id',
-        'year',
-        'month',
-        'amount',
-        'source',
-        'created_at',
-        'updated_at',
-      ],
-    });
-
-    await googleSheetsService.insert(
+    const incomesTable = await getUserTable(
+      email,
       spreadsheetId,
-      'budget_incomes',
-      newRecord
+      'budget_incomes'
     );
+    await incomesTable.create(newRecord);
     res
       .status(201)
       .json({ success: true, data: newRecord, message: 'Income recorded' });
