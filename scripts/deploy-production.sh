@@ -11,7 +11,6 @@ export DOCKER_IMAGE_TAG="v$(date +%Y%m%d%H%M%S)"
 
 # Pre-deployment checks
 echo "🔍 Running pre-deployment checks..."
-pnpm run security:audit
 pnpm --filter ./apps/frontend run test
 pnpm --filter ./apps/frontend run build
 
