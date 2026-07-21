@@ -84,3 +84,6 @@ newrelic_agent.log
 # Backup files
 *.backup
 *.bak
+
+# longcelot-sheet-db CLI (OAuth token cache from `lsdb sync`/etc — never commit)
+.lsdb-tokens.json

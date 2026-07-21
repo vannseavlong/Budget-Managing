@@ -22,7 +22,10 @@ throughout. See §5 for the full audit trail and what's deliberately still
 in place (`client.ts`, `database.ts`, `schema-migration.ts`,
 `schema-versions.ts`, `validate.ts`, `types.ts`, and everything under
 `controllers/sheets/*`/`controllers/auth/*`/`controllers/telegram/*` not
-touched by this migration).
+touched by this migration). Phase 6 (not originally planned) sets up the
+`lsdb` CLI (`validate`/`doctor`/`erdiagram`/`sync`/`status`) via
+`lsdb.config.ts` and a `schemas -> src/services/sheetDb/schemas` symlink —
+see §3 Phase 6.
 Owner: backend
 Decided: single web app, role-gated admin tab (see "Architecture decision"
 below). Sheet provisioning stayed on the existing per-user-OAuth code path
@@ -395,7 +398,7 @@ Verified: `npx tsc --noEmit` clean, `npx next build` succeeds and lists
 renders the client-side loading state — full auth flow untestable here
 without real Google OAuth credentials).
 
-### Phase 5 — Cleanup — partially done
+### Phase 5 — Cleanup — done
 
 1. `longcelot-sheet-db` is now genuinely imported and load-bearing (Phase 1
    + Phase 2) — the "installed but unused" state from the start of this plan
@@ -466,6 +469,50 @@ without real Google OAuth credentials).
    `REDIS_URL` were added to `apps/backend/.env.example` in Phase 1. No
    Postgres provisioning needed — Postgres stays scoped to the pre-existing,
    unrelated OTP/Telegram feature.
+
+### Phase 6 — lsdb CLI tooling — ✅ done
+
+Not part of the original plan — added on request, since we'd hand-written
+the adapter/schemas directly instead of running `lsdb init`, which meant
+`lsdb validate`/`doctor`/`sync`/`status`/`erdiagram` didn't work (they all
+require `lsdb.config.ts`, and most hardcode looking for schemas at
+`<cwd>/schemas/<actor>/*.ts` — a different location than
+`src/services/sheetDb/schemas/`, where our runtime code needs them to stay).
+
+- `apps/backend/lsdb.config.ts` — new. `{ projectName, actors: [{name:
+  'admin', sheetIdEnv: 'ADMIN_SHEET_ID'}, {name: 'user', sheetIdEnv:
+  'DEV_USER_SHEET_ID'}] }`. Documents in a comment that `lsdb sync
+  --all-users` won't do anything useful here — it reads lsdb's built-in
+  admin `users` registry to find real per-user sheets, and that registry is
+  never populated since we provision sheets via
+  `services/googleSheets/database.ts`, not `createUserSheet()` (§1.5).
+- **Symlink, not a move**: `apps/backend/schemas -> src/services/sheetDb/schemas`.
+  Tried physically relocating the schema files to `apps/backend/schemas/`
+  first (matching the CLI's hardcoded path) and pointing `adapter.ts`'s
+  imports there — broke both `tsc --noEmit` and `tsc` build with `TS6059:
+  File is not under 'rootDir'` (`tsconfig.json` has `rootDir: "./src"`).
+  Fixing that properly would mean changing `rootDir` to the package root,
+  which reshapes `dist/`'s output layout and would've broken
+  `"main": "dist/index.js"`/the `start` script — too big a change for what
+  this needed. The symlink sidesteps it entirely: real files stay inside
+  `src/` (so our own code and `tsc` never see anything outside `rootDir`),
+  and the CLI's plain `fs`/`require()` calls follow the symlink
+  transparently since none of that goes through `tsc`.
+- `apps/backend/.env.example` — added optional `DEV_USER_SHEET_ID` (CLI-only,
+  the app itself never reads it).
+- `.gitignore` (root) — added `.lsdb-tokens.json`, the OAuth token cache
+  `lsdb sync` writes to disk on first run.
+- Verified: `npx lsdb validate` found and validated all 8 schemas (1 admin,
+  7 user) through the symlink; `npx lsdb erdiagram` generated a correct
+  Mermaid ER diagram, including the `budget_items.budget_id → budgets.id`
+  FK from `ref()`; `npx lsdb doctor` correctly detected the config file and
+  schemas directory and accurately flagged the genuinely-missing pieces
+  (`GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`ADMIN_SHEET_ID` aren't set in
+  this environment, and no OAuth token cache exists yet — both expected,
+  neither is available here). `lsdb sync` itself needs real Google OAuth
+  credentials to actually authorize, so it wasn't run end-to-end.
+- `tsc --noEmit`/`eslint`/boot test all re-verified clean after these
+  changes (no changes to any file under `src/`).
 
 ## 4. Open questions / follow-ups
 
