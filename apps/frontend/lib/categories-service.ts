@@ -16,6 +16,14 @@ import type {
   ApiResponse,
 } from '../types/categories';
 
+/**
+ * Marks errors deliberately raised by this service (validation failures,
+ * API-reported failure messages) so handleError can distinguish them from
+ * unexpected/raw errors (network failures, etc.) that should be replaced
+ * with a generic fallback message instead of leaking their raw text.
+ */
+class CategoryServiceError extends Error {}
+
 export class CategoriesService {
   /**
    * Fetch all categories with optional filtering
@@ -42,7 +50,7 @@ export class CategoriesService {
       const response = await httpClient.get<CategoriesListResponse>(url);
 
       if (!response.data.success) {
-        throw new Error(response.data.message || 'Failed to fetch categories');
+        throw new CategoryServiceError(response.data.message || 'Failed to fetch categories');
       }
 
       return response.data.data || [];
@@ -62,7 +70,7 @@ export class CategoriesService {
       );
 
       if (!response.data.success || !response.data.data) {
-        throw new Error(response.data.message || 'Category not found');
+        throw new CategoryServiceError(response.data.message || 'Category not found');
       }
 
       return response.data.data;
@@ -88,7 +96,7 @@ export class CategoriesService {
       );
 
       if (!response.data.success || !response.data.data) {
-        throw new Error(response.data.message || 'Failed to create category');
+        throw new CategoryServiceError(response.data.message || 'Failed to create category');
       }
 
       return response.data.data;
@@ -115,7 +123,7 @@ export class CategoriesService {
       );
 
       if (!response.data.success || !response.data.data) {
-        throw new Error(response.data.message || 'Failed to update category');
+        throw new CategoryServiceError(response.data.message || 'Failed to update category');
       }
 
       return response.data.data;
@@ -135,7 +143,7 @@ export class CategoriesService {
       );
 
       if (!response.data.success) {
-        throw new Error(response.data.message || 'Failed to delete category');
+        throw new CategoryServiceError(response.data.message || 'Failed to delete category');
       }
     } catch (error) {
       console.error('Error deleting category:', error);
@@ -148,19 +156,19 @@ export class CategoriesService {
    */
   private static validateCategoryPayload(payload: CreateCategoryRequest): void {
     if (!payload.name || payload.name.trim().length === 0) {
-      throw new Error('Category name is required');
+      throw new CategoryServiceError('Category name is required');
     }
 
     if (payload.name.length > 50) {
-      throw new Error('Category name must be less than 50 characters');
+      throw new CategoryServiceError('Category name must be less than 50 characters');
     }
 
     if (!payload.emoji || payload.emoji.trim().length === 0) {
-      throw new Error('Emoji is required');
+      throw new CategoryServiceError('Emoji is required');
     }
 
     if (payload.emoji.length > 4) {
-      throw new Error('Invalid emoji format');
+      throw new CategoryServiceError('Invalid emoji format');
     }
   }
 
@@ -170,21 +178,21 @@ export class CategoriesService {
   private static validateUpdatePayload(payload: UpdateCategoryRequest): void {
     if (payload.name !== undefined) {
       if (!payload.name || payload.name.trim().length === 0) {
-        throw new Error('Category name cannot be empty');
+        throw new CategoryServiceError('Category name cannot be empty');
       }
 
       if (payload.name.length > 50) {
-        throw new Error('Category name must be less than 50 characters');
+        throw new CategoryServiceError('Category name must be less than 50 characters');
       }
     }
 
     if (payload.emoji !== undefined) {
       if (!payload.emoji || payload.emoji.trim().length === 0) {
-        throw new Error('Emoji is required');
+        throw new CategoryServiceError('Emoji is required');
       }
 
       if (payload.emoji.length > 4) {
-        throw new Error('Invalid emoji format');
+        throw new CategoryServiceError('Invalid emoji format');
       }
     }
   }
@@ -197,7 +205,7 @@ export class CategoriesService {
       return new Error(error.response.data.message);
     }
 
-    if (error.message) {
+    if (error instanceof CategoryServiceError) {
       return new Error(error.message);
     }
 
@@ -258,7 +266,7 @@ export class CategoriesService {
       );
 
       if (!response.data.success) {
-        throw new Error(response.data.message || 'Migration failed');
+        throw new CategoryServiceError(response.data.message || 'Migration failed');
       }
 
       return {
