@@ -13,7 +13,6 @@ import { securityMiddleware } from './middleware/security';
 
 // Import routes
 import authRoutes from './routes/auth';
-import dataRoutes from './routes/data';
 import categoriesRoutes from './routes/categories';
 import transactionsRoutes from './routes/transactions';
 import budgetsRoutes from './routes/budgets';
@@ -88,7 +87,6 @@ app.use(securityMiddleware);
 
 // API routes
 app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/data', dataRoutes);
 app.use('/api/v1/categories', categoriesRoutes);
 app.use('/api/v1/transactions', transactionsRoutes);
 app.use('/api/v1/budgets', budgetsRoutes);

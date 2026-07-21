@@ -80,12 +80,6 @@ export const API_ENDPOINTS = {
     DISCONNECT: `${API_BASE_URL}/api/v1/sheets/disconnect`,
   },
 
-  // Data export/import
-  DATA: {
-    EXPORT: `${API_BASE_URL}/api/v1/data/export`,
-    IMPORT: `${API_BASE_URL}/api/v1/data/import`,
-  },
-
   // Admin-only endpoints
   ADMIN: {
     STATS: `${API_BASE_URL}/api/v1/admin/stats`,
