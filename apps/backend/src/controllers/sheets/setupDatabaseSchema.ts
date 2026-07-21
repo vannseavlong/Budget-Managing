@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { validateDatabaseSchemaService } from '../../services/googleSheets/endpoints/sheets/validateDatabaseSchemaService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
-const googleSheetsService = new GoogleSheetsService();
+const googleSheetsService = validateDatabaseSchemaService;
 
 export async function setupDatabaseSchema(
   req: Request,

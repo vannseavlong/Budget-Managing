@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { getIncomeSumService } from '../../services/googleSheets/endpoints/budgets/getIncomeSumService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -22,7 +22,7 @@ export async function getIncomeSum(req: Request, res: Response) {
       return;
     }
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = getIncomeSumService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // find incomes for this user and month/year
@@ -59,12 +59,9 @@ export async function getIncomeSum(req: Request, res: Response) {
     res.json({ success: true, data: { total } });
   } catch (error) {
     logger.error('Error getting income sum:', error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message:
-          error instanceof Error ? error.message : 'Internal server error',
-      });
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Internal server error',
+    });
   }
 }

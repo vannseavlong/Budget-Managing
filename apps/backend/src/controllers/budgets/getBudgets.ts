@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { getBudgetsService } from '../../services/googleSheets/endpoints/budgets/getBudgetsService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { BudgetQueryParams } from './types';
@@ -13,7 +13,7 @@ export async function getBudgets(req: Request, res: Response): Promise<void> {
     const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
     const { year, month } = req.query as any as BudgetQueryParams;
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = getBudgetsService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Build filter criteria

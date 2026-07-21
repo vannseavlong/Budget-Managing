@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { deleteTransactionService } from '../../services/googleSheets/endpoints/transactions/deleteTransactionService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -15,7 +15,7 @@ export async function deleteTransaction(
     const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
     const { id } = req.params;
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = deleteTransactionService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Check if transaction exists and belongs to this user

@@ -10,6 +10,7 @@ export const updateSettingsSchema = z.object({
   dark_mode: z.boolean().optional(),
   telegram_notifications: z.boolean().optional(),
   telegram_chat_id: z.string().optional(),
+  onboarding_complete: z.boolean().optional(),
 });
 
 export type UpdateSettingsData = z.infer<typeof updateSettingsSchema>;
@@ -21,4 +22,5 @@ export const defaultSettings = {
   dark_mode: false,
   telegram_notifications: false,
   telegram_chat_id: null,
+  onboarding_complete: false,
 };

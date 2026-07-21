@@ -5,6 +5,13 @@
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+// const RUNTIME_FALLBACK =
+//   typeof window !== 'undefined'
+//     ? `${window.location.protocol}//${window.location.hostname}:3001`
+//     : 'http://localhost:3001';
+
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || RUNTIME_FALLBACK;
+
 export const API_ENDPOINTS = {
   // Authentication endpoints
   AUTH: {

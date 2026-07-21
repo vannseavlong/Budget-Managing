@@ -1,10 +1,7 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
 import { logger } from '../../utils/logger';
 import { updateSettingsSchema } from './types';
 import { z } from 'zod';
-
-const googleSheetsService = new GoogleSheetsService();
 
 /**
  * Update user settings

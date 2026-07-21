@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { logger } from '../../utils/logger';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { updateUserTelegramService } from '../../services/googleSheets/endpoints/telegram/updateUserTelegramService';
 import { TelegramConnectionStore } from '../../utils/TelegramConnectionStore';
 import {
   TelegramUpdate,
@@ -178,10 +178,12 @@ async function linkTelegramToUser(
 
     // Also save to Google Sheets for persistence
     try {
-      const sheetsService = new GoogleSheetsService();
-
-      // Update user in Google Sheets with Telegram info
-      await sheetsService.updateUserTelegramInfo(email, username, chatId);
+      // Use the focused endpoint service for updating Telegram info
+      await updateUserTelegramService.updateUserTelegramInfo(
+        email,
+        username,
+        chatId
+      );
       logger.info('✅ Telegram connection saved to Google Sheets', {
         email,
         telegram_username: username,

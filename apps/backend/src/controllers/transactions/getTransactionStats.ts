@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { getTransactionStatsService } from '../../services/googleSheets/endpoints/transactions/getTransactionStatsService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -15,7 +15,7 @@ export async function getTransactionStats(
     const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
     const { period = 'month', year, month } = req.query;
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = getTransactionStatsService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Get all transactions for this user

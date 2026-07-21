@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { updateCategoryService } from '../../services/googleSheets/endpoints/categories/updateCategoryService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { z } from 'zod';
@@ -18,7 +18,7 @@ export async function updateCategory(
     const { id } = req.params;
     const validatedData = updateCategorySchema.parse(req.body);
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = updateCategoryService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Check if category exists and belongs to this user

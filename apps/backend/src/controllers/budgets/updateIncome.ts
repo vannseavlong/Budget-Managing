@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { updateIncomeService } from '../../services/googleSheets/endpoints/budgets/updateIncomeService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { z } from 'zod';
@@ -21,7 +21,7 @@ export async function updateIncome(req: Request, res: Response) {
     const { id } = req.params;
     const validated = updateIncomeSchema.parse(req.body);
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = updateIncomeService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Ensure the incomes table exists

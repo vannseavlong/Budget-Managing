@@ -6,6 +6,8 @@ import { useTheme } from '@/components/providers/theme-provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import TelegramConnectionCard from '@/components/common/TelegramConnectionCard';
 import Image from 'next/image';
 import {
@@ -34,6 +36,13 @@ export default function SettingsPage() {
   const [telegramNotifications, setTelegramNotifications] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [onboardingData, setOnboardingData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
 
   const handleRefreshProfile = async () => {
     try {
@@ -98,6 +107,31 @@ export default function SettingsPage() {
     fetchProfile();
   }, []);
 
+  // Fetch settings to determine onboarding status
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const response = await fetch(`${baseUrl}/api/v1/settings`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await response.json();
+        if (data.success) {
+          // If onboarding not complete, prompt modal
+          if (data.data?.onboarding_complete === false) {
+            setShowOnboardingModal(true);
+            setOnboardingData((d) => ({ ...d, email: user?.email || '' }));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch settings:', error);
+      }
+    };
+
+    fetchSettings();
+  }, [user]);
+
   const handleTelegramConnect = () => {
     // Redirect to Telegram bot with deep linking
     const botUsername =
@@ -125,6 +159,69 @@ export default function SettingsPage() {
       )
     ) {
       console.log('Clearing all data...');
+    }
+  };
+
+  const handleCompleteOnboarding = async () => {
+    if (onboardingData.password !== onboardingData.confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const payload = {
+        onboarding_complete: true,
+        onboarding_profile: {
+          username: onboardingData.username,
+          email: onboardingData.email,
+        },
+        // password can be handled by backend if supported
+        onboarding_password: onboardingData.password,
+      };
+
+      const response = await fetch(`${baseUrl}/api/v1/settings`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setShowOnboardingModal(false);
+        setShowSuccessMessage(true);
+        setTimeout(() => setShowSuccessMessage(false), 3000);
+        handleRefreshProfile();
+      } else {
+        alert(data.message || 'Failed to complete onboarding');
+      }
+    } catch (err) {
+      console.error('Onboarding error', err);
+      alert('Failed to complete onboarding');
+    }
+  };
+
+  const handleSkipOnboarding = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const payload = { onboarding_complete: false, onboarding_skipped: true };
+      await fetch(`${baseUrl}/api/v1/settings`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      setShowOnboardingModal(false);
+    } catch (err) {
+      console.error('Skip onboarding error', err);
+      setShowOnboardingModal(false);
     }
   };
 
@@ -160,6 +257,69 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Onboarding Modal */}
+      {showOnboardingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <Card className="w-full max-w-lg">
+            <CardHeader>
+              <CardTitle>Complete Your Onboarding</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div>
+                  <Label>Username</Label>
+                  <Input
+                    value={onboardingData.username}
+                    onChange={(e) =>
+                      setOnboardingData((d) => ({ ...d, username: e.target.value }))
+                    }
+                  />
+                </div>
+
+                <div>
+                  <Label>Email</Label>
+                  <Input
+                    value={onboardingData.email}
+                    onChange={(e) =>
+                      setOnboardingData((d) => ({ ...d, email: e.target.value }))
+                    }
+                  />
+                </div>
+
+                <div>
+                  <Label>Password</Label>
+                  <Input
+                    type="password"
+                    value={onboardingData.password}
+                    onChange={(e) =>
+                      setOnboardingData((d) => ({ ...d, password: e.target.value }))
+                    }
+                  />
+                </div>
+
+                <div>
+                  <Label>Confirm Password</Label>
+                  <Input
+                    type="password"
+                    value={onboardingData.confirmPassword}
+                    onChange={(e) =>
+                      setOnboardingData((d) => ({ ...d, confirmPassword: e.target.value }))
+                    }
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <Button variant="ghost" onClick={handleSkipOnboarding}>
+                    Skip for now
+                  </Button>
+                  <Button onClick={handleCompleteOnboarding}>Complete</Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Linked Accounts */}
@@ -398,3 +558,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

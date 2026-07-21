@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { updateAccountService } from '../../services/googleSheets/endpoints/data/updateAccountService';
 import { logger } from '../../utils/logger';
 import {
   accountSchema,
@@ -7,7 +7,7 @@ import {
   getUserSpreadsheetId,
 } from './types';
 
-const googleSheetsService = new GoogleSheetsService();
+const googleSheetsService = updateAccountService;
 
 export async function updateAccount(
   req: Request,

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { getGoalsService } from '../../services/googleSheets/endpoints/goals/getGoalsService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -11,7 +11,7 @@ export async function getGoals(req: Request, res: Response): Promise<void> {
     const authenticatedReq = req as AuthenticatedRequest;
     const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = getGoalsService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Get all goals for this user

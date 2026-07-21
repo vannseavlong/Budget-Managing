@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { getProfileService } from '../../services/googleSheets/endpoints/auth/getProfileService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -20,7 +20,7 @@ export async function getProfile(req: Request, res: Response): Promise<void> {
     }
 
     // Fetch fresh user data from the database to include telegram fields
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = getProfileService;
     googleSheetsService.setCredentials(user.googleCredentials);
 
     const users = await googleSheetsService.find(user.spreadsheetId, 'users', {

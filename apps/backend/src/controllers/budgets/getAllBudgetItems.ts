@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { getAllBudgetItemsService } from '../../services/googleSheets/endpoints/budgets/getAllBudgetItemsService';
 import { logger } from '../../utils/logger';
+import { DatabaseRecord } from '../../services/googleSheets/types';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
 /**
@@ -16,10 +17,10 @@ export async function getAllBudgetItems(
     const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
     const { budget_id } = req.query;
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = getAllBudgetItemsService;
     googleSheetsService.setCredentials(googleCredentials);
 
-    let budgetItems: any[] = [];
+    let budgetItems: DatabaseRecord[] = [];
 
     if (budget_id && typeof budget_id === 'string' && budget_id.trim()) {
       // If budget_id provided, verify the budget belongs to the user first
@@ -46,26 +47,30 @@ export async function getAllBudgetItems(
       );
     } else {
       // No budget_id: return items for all budgets that belong to the authenticated user
-      const userBudgets = await googleSheetsService.find(
+      const userBudgets: DatabaseRecord[] = await googleSheetsService.find(
         spreadsheetId,
         'budgets',
         {
           user_id: authenticatedReq.user!.email,
         }
       );
-      const budgetIds = new Set(userBudgets.map((b: any) => b.id));
+      const budgetIds = new Set(
+        userBudgets.map((b: DatabaseRecord) => String(b.id))
+      );
 
       // Get all budget_items then filter in-memory by budget_id belonging to the user
-      const allItems = await googleSheetsService.find(
+      const allItems: DatabaseRecord[] = await googleSheetsService.find(
         spreadsheetId,
         'budget_items'
       );
-      budgetItems = allItems.filter((it: any) => budgetIds.has(it.budget_id));
+      budgetItems = allItems.filter((it: DatabaseRecord) =>
+        budgetIds.has(String(it.budget_id))
+      );
     }
 
     // Sort by category name if present
-    budgetItems.sort((a: any, b: any) =>
-      (a.category_name || '').localeCompare(b.category_name || '')
+    budgetItems.sort((a: DatabaseRecord, b: DatabaseRecord) =>
+      String(a.category_name || '').localeCompare(String(b.category_name || ''))
     );
 
     res.status(200).json({

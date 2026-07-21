@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { createGoalService } from '../../services/googleSheets/endpoints/goals/createGoalService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
@@ -15,7 +15,7 @@ export async function createGoal(req: Request, res: Response): Promise<void> {
     const { spreadsheetId, googleCredentials } = authenticatedReq.user!;
     const validatedData = createGoalSchema.parse(req.body);
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = createGoalService;
     googleSheetsService.setCredentials(googleCredentials);
 
     // Check if goal with same name already exists for this user

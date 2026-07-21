@@ -1,6 +1,12 @@
 import { Request } from 'express';
 import { z } from 'zod';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+// Accept a lightweight Google Sheets client-like object instead of the full class to support
+// per-endpoint service objects that expose only the setCredentials method.
+export type GoogleSheetsClientLike = {
+  setCredentials?: (credentials: any) => void;
+} & {
+  [key: string]: any;
+};
 
 // Validation schemas for different entities
 export const categorySchema = z.object({
@@ -67,20 +73,20 @@ export type GoalData = z.infer<typeof goalSchema>;
 // Shared utility functions
 export function setupUserCredentials(
   req: Request,
-  googleSheetsService: GoogleSheetsService
+  googleSheetsService: GoogleSheetsClientLike
 ): void {
-  const user = (req as any).user;
-  if (user?.googleCredentials) {
+  const user = req.user;
+  if (user?.googleCredentials && googleSheetsService.setCredentials) {
     googleSheetsService.setCredentials(user.googleCredentials);
   }
 }
 
 export function getUserSpreadsheetId(req: Request): string {
-  const user = (req as any).user;
-  return user?.spreadsheetId;
+  const user = req.user;
+  return user!.spreadsheetId;
 }
 
 export function getUserEmail(req: Request): string {
-  const user = (req as any).user;
-  return user?.email;
+  const user = req.user;
+  return user!.email;
 }

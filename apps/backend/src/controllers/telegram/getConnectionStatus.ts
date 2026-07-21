@@ -1,10 +1,7 @@
 import { Request, Response } from 'express';
 import { logger } from '../../utils/logger';
 import { TelegramConnectionStore } from '../../utils/TelegramConnectionStore';
-import {
-  GoogleSheetsService,
-  DatabaseRecord,
-} from '../../services/GoogleSheetsService';
+import { getConnectionStatusService } from '../../services/googleSheets/endpoints/telegram/getConnectionStatusService';
 
 export async function getConnectionStatus(
   req: Request,
@@ -12,7 +9,7 @@ export async function getConnectionStatus(
 ): Promise<void> {
   try {
     // Get user email from the authenticated request
-    const userEmail = (req as any).user?.email;
+    const userEmail = req.user?.email;
 
     logger.info('🔍 Getting connection status for user:', { userEmail });
 
@@ -35,41 +32,27 @@ export async function getConnectionStatus(
     // If not in memory, try to load from Google Sheets
     if (!connection) {
       try {
-        const sheetsService = new GoogleSheetsService();
-        const userSpreadsheetId = await sheetsService.getOrCreateUserDatabase(
-          userEmail,
-          userEmail.split('@')[0]
-        );
+        const result =
+          await getConnectionStatusService.fetchConnectionFromSheets(userEmail);
 
-        if (userSpreadsheetId) {
-          const users = await sheetsService.find(userSpreadsheetId, 'users');
-          const userRecord = users.find(
-            (user: DatabaseRecord) => user.email === userEmail
+        if (result) {
+          // restore to memory store
+          TelegramConnectionStore.storeConnection(
+            userEmail,
+            result.telegram_username as string,
+            (result.chatId || result.chat_id) as string
           );
 
-          if (userRecord && userRecord.telegram_username && userRecord.chatId) {
-            // Found connection in Google Sheets, restore to memory
-            TelegramConnectionStore.storeConnection(
-              userEmail,
-              userRecord.telegram_username as string,
-              userRecord.chatId as string
-            );
-
-            connection = {
-              email: userEmail,
-              telegram_username: userRecord.telegram_username as string,
-              chat_id: userRecord.chatId as string,
-              connected_at:
-                (userRecord.updated_at as string) || new Date().toISOString(),
-              status: 'connected' as const,
-            };
-
-            logger.info('✅ Connection restored from Google Sheets');
-          }
+          connection = {
+            email: userEmail,
+            telegram_username: result.telegram_username as string,
+            chat_id: (result.chatId || result.chat_id) as string,
+            connected_at: result.connected_at,
+            status: 'connected' as const,
+          };
         }
       } catch (sheetsError) {
-        logger.error('❌ Error loading from Google Sheets:', sheetsError);
-        // Continue with memory-only check
+        // Keep going — fall back to memory-only check
       }
     }
 

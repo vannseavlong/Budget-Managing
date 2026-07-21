@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { recreateDatabaseService } from '../../services/googleSheets/endpoints/auth/recreateDatabaseService';
 import { logger } from '../../utils/logger';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
@@ -22,7 +22,7 @@ export async function recreateDatabase(
       return;
     }
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = recreateDatabaseService;
 
     // Set the user's Google credentials
     googleSheetsService.setCredentials(user.googleCredentials);

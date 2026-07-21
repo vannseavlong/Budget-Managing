@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { handleCallbackService } from '../../services/googleSheets/endpoints/auth/handleCallbackService';
 import { logger } from '../../utils/logger';
 import jwt from 'jsonwebtoken';
 import { authCallbackSchema } from './types';
+import { getPendingUser, removePendingUser } from '../otp-auth';
+import { GoogleSheetsOTPAdapter } from '../../services/google-sheets-otp-adapter';
+import { getAuthenticatedClient } from '../../services/googleSheets/client';
 
 /**
  * Handle OAuth callback and create user database
@@ -16,7 +19,7 @@ export async function handleCallback(
     const validatedData = authCallbackSchema.parse(req.query);
     const { code } = validatedData;
 
-    const googleSheetsService = new GoogleSheetsService();
+    const googleSheetsService = handleCallbackService;
 
     // Exchange code for tokens
     const credentials = await googleSheetsService.getTokens(code);
@@ -25,11 +28,44 @@ export async function handleCallback(
     // Get user info
     const userInfo = await googleSheetsService.getUserInfo();
 
+    // Check if there's a pending user registration for this email
+    const pendingUser = getPendingUser(userInfo.email);
+
     // Get or create user's Google Sheets database (persistent across logins)
     const spreadsheetId = await googleSheetsService.getOrCreateUserDatabase(
       userInfo.email,
-      userInfo.name
+      pendingUser?.username || userInfo.name
     );
+
+    // If there's a pending user, complete their registration in the spreadsheet
+    if (pendingUser) {
+      try {
+        const auth = getAuthenticatedClient();
+        const adapter = new GoogleSheetsOTPAdapter(auth, spreadsheetId);
+        await adapter.initializeSheets(spreadsheetId);
+
+        // Check if user already exists
+        const existingUser = await adapter.findUserByEmail(userInfo.email);
+        
+        if (!existingUser) {
+          // Create user with the password they registered with
+          await adapter.createUser({
+            email: pendingUser.email,
+            username: pendingUser.username,
+            password_hash: pendingUser.password_hash,
+            is_active: true,
+          });
+          
+          logger.info(`Completed registration for pending user: ${userInfo.email}`);
+        }
+
+        // Remove from pending users
+        removePendingUser(userInfo.email);
+      } catch (error) {
+        logger.error('Error completing pending user registration:', error);
+        // Continue with normal OAuth flow even if this fails
+      }
+    }
 
     // Get user data from database to include telegram fields
     const userData = await googleSheetsService.find(spreadsheetId, 'users', {

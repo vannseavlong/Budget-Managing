@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
+import { deleteAccountService } from '../../services/googleSheets/endpoints/data/deleteAccountService';
 import { logger } from '../../utils/logger';
 import { setupUserCredentials, getUserSpreadsheetId } from './types';
 
-const googleSheetsService = new GoogleSheetsService();
+const googleSheetsService = deleteAccountService;
 
 export async function deleteAccount(
   req: Request,
