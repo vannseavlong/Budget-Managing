@@ -13,8 +13,12 @@ and the server boots and responds correctly on every migrated route
 token, no server-side crashes). Phase 4 (frontend admin tab) is **done** —
 role-gated nav entries, a `/admin` page showing total/active user stats,
 client-side redirect for non-admins backed by server-side `requireAdmin`
-enforcement. Phase 5 cleanup (deleting the superseded
-`services/googleSheets/*` files) intentionally not done yet — see §5.
+enforcement. Phase 5 cleanup is **partially done**: 21 confirmed-dead files
+(the `budgets`/`goals`/`sendMessage`/`transactions`-stats Service wrappers)
+removed; a full-repo import audit turned up a second, apparently-unused
+`/api/v1/data/*` CRUD API (`controllers/data/*`) still depending on the
+`categories`/`transactions` Service wrappers — left alone pending your
+confirmation it's actually dead (see §5 item 4).
 Owner: backend
 Decided: single web app, role-gated admin tab (see "Architecture decision"
 below). Sheet provisioning stayed on the existing per-user-OAuth code path
@@ -387,28 +391,55 @@ Verified: `npx tsc --noEmit` clean, `npx next build` succeeds and lists
 renders the client-side loading state — full auth flow untestable here
 without real Google OAuth credentials).
 
-### Phase 5 — Cleanup — not started
+### Phase 5 — Cleanup — partially done
 
 1. `longcelot-sheet-db` is now genuinely imported and load-bearing (Phase 1
    + Phase 2) — the "installed but unused" state from the start of this plan
    no longer applies. `otp-telegram-longcelot` is unrelated to this work;
    not verified here.
-2. **Safe to delete now**: none of `services/googleSheets/{crud,sheets,schema-migration,
-   schema-versions}.ts` are imported by any table controller anymore
-   (`categories`, `transactions`, `budgets`/`budget_items`/`budget_incomes`,
-   `goals`, `telegram/sendMessage.ts` all moved to `sheetDb/userContext.ts`).
-   Each migrated table's `googleSheets/endpoints/<table>/*Service.ts`
-   wrapper is similarly now dead code.
-3. **Not safe to delete yet** — still directly imported elsewhere:
-   `services/googleSheets/client.ts` (OAuth client singleton — used by
-   `handleCallback.ts`, `ensureAdminSheetAccess.ts` indirectly via its own
-   `OAuth2Client`, and most of `controllers/auth/*`/`controllers/sheets/*`),
+2. **Correction to the previous revision of this doc**: it claimed every
+   migrated table's `googleSheets/endpoints/<table>/*Service.ts` wrapper was
+   dead code. A real per-file import audit (`grep -rl` for each file's
+   basename across `src/`) found that's only true for some tables — see
+   finding below.
+3. **Deleted** (confirmed zero importers anywhere in `src/`, not just from
+   the controllers this migration touched):
+   `services/googleSheets/endpoints/budgets/*.ts` (14 files — the whole
+   directory, now removed), `services/googleSheets/endpoints/goals/*.ts` (5
+   files, directory removed), `endpoints/telegram/sendMessageService.ts`,
+   `endpoints/transactions/getTransactionStatsService.ts`. `tsc --noEmit`
+   and a boot test (`GET /health` → 200) both clean after removal.
+4. **New finding — not deleted, needs your call**: `categories`'s and most
+   of `transactions`'s `endpoints/*Service.ts` files are still imported —
+   but only by `controllers/data/*` (`routes/data.ts`, mounted at
+   `/api/v1/data/{categories,accounts,transactions,dashboard}`), a second,
+   parallel CRUD API that predates the dedicated `/api/v1/categories`,
+   `/api/v1/transactions` etc. routes this migration touched. Checked the
+   frontend's `API_ENDPOINTS` (`apps/frontend/lib/api-config.ts`): nothing
+   calls any `/api/v1/data/*` path except `DATA.EXPORT`/`DATA.IMPORT`, and
+   *those* point at `/api/v1/data/export`/`/import` — routes that don't
+   exist in `routes/data.ts` at all (dead config on the frontend side too).
+   So `controllers/data/*` looks entirely unreachable from the actual app,
+   but I did not verify there's no other consumer (external API client,
+   Postman collection, mobile app) — deleting a whole live-mounted route
+   family is a bigger call than "clean up this migration's leftovers," so
+   left it alone. If you confirm `/api/v1/data/*` really is dead, removing
+   it would also free up `categories`/`transactions`/`data`
+   `endpoints/*Service.ts`, `services/googleSheets/{crud,sheets}.ts`
+   (down to just `database.ts`/`client.ts`, still needed for provisioning),
+   and `controllers/data/*` + `routes/data.ts` themselves.
+5. **Not safe to delete regardless**: `services/googleSheets/client.ts`
+   (OAuth client singleton — used by `handleCallback.ts`,
+   `controllers/auth/*`, `controllers/sheets/*`, `controllers/otp-auth.ts`),
    `services/googleSheets/database.ts` (`getOrCreateUserDatabase`, still the
-   live sheet-provisioning path per §1.5), and anything under
-   `controllers/sheets/*` (schema validation/setup endpoints, untouched by
-   this migration). A real dependency audit (`grep -rl` per file) is needed
-   before deleting anything in step 2 — do it file by file, not as a batch.
-4. Update `.env.example` / deployment docs for any new env vars — **done**:
+   live sheet-provisioning path per §1.5), `schema-migration.ts`/
+   `schema-versions.ts` (used by `controllers/sheets/schemaMigration.ts`),
+   `validate.ts`/`types.ts` (barrel-exported via `services/googleSheets/index.ts`,
+   consumed broadly), and everything under `controllers/sheets/*`,
+   `controllers/auth/*` (besides `handleCallback`/`getProfile`),
+   `controllers/telegram/*` (besides `sendMessage`) — none of this was in
+   scope for the lsdb migration and none of it was touched.
+6. Update `.env.example` / deployment docs for any new env vars — **done**:
    `ADMIN_SHEET_ID`, `SUPER_ADMIN_EMAIL`, `ADMIN_EMAILS` (optional), and
    `REDIS_URL` were added to `apps/backend/.env.example` in Phase 1. No
    Postgres provisioning needed — Postgres stays scoped to the pre-existing,
