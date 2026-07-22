@@ -20,11 +20,7 @@ import goalsRoutes from './routes/goals';
 import settingsRoutes from './routes/settings';
 import telegramRoutes from './routes/telegram';
 import sheetsRoutes from './routes/sheets';
-import otpAuthRoutes from './routes/otp-auth';
 import adminRoutes from './routes/admin';
-
-// Import OTP service
-import { initializeOtpService } from './services/otp-auth-service';
 
 // Load environment variables
 dotenv.config({
@@ -94,7 +90,6 @@ app.use('/api/v1/goals', goalsRoutes);
 app.use('/api/v1/settings', settingsRoutes);
 app.use('/api/v1/telegram', telegramRoutes);
 app.use('/api/v1/sheets', sheetsRoutes);
-app.use('/api/v1/otp-auth', otpAuthRoutes);
 app.use('/api/v1/admin', adminRoutes);
 
 // Root endpoint for ngrok tunnel verification
@@ -105,7 +100,6 @@ app.get('/', (req, res) => {
     endpoints: {
       health: '/health',
       telegram_webhook: '/api/v1/telegram/webhook',
-      otp_auth: '/api/v1/otp-auth',
       api_docs: '/api/v1/docs',
     },
     timestamp: new Date().toISOString(),
@@ -137,16 +131,6 @@ process.on('SIGINT', () => {
   logger.info('SIGINT signal received: closing HTTP server');
   process.exit(0);
 });
-
-// Initialize OTP service on startup
-initializeOtpService()
-  .then(() => {
-    logger.info('OTP Telegram service initialized successfully');
-  })
-  .catch((error) => {
-    logger.error('Failed to initialize OTP service:', error);
-    logger.warn('Server will continue without OTP authentication');
-  });
 
 app.listen(PORT, () => {
   logger.info(`Server is running on port ${PORT}`);

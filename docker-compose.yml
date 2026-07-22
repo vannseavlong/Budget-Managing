@@ -31,8 +31,6 @@ services:
       JWT_EXPIRES_IN: 7d
       JWT_REFRESH_SECRET: your-super-secret-refresh-key-change-this-in-production
       JWT_REFRESH_EXPIRES_IN: 30d
-      HMAC_SECRET: your-hmac-secret-key-change-in-production-min-32-chars-long
-      BCRYPT_ROUNDS: 12
       ALLOWED_ORIGINS: http://localhost:3000,https://yourdomain.com
       LOG_LEVEL: info
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
@@ -42,7 +40,7 @@ services:
       # and the per-user Sheets CRUD layer to function at all
       ADMIN_SHEET_ID: ${ADMIN_SHEET_ID}
       SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL}
-      # Telegram — optional, OTP/Telegram features stay disabled without these
+      # Telegram — optional, notification features stay disabled without these
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
       TELEGRAM_WEBHOOK_URL: ${TELEGRAM_WEBHOOK_URL:-}
