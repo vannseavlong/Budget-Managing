@@ -1,5 +1,13 @@
 # Migration Plan: `longcelot-sheet-db` + Admin/User Split
 
+> **⚠ SUPERSEDED.** The backend this document describes was renamed to
+> `apps/backend-v1` and kept only as a working reference. A fresh backend is
+> being planned at `apps/backend`, using lsdb as the only storage layer from
+> the start instead of incrementally migrating onto it. See
+> `docs/BACKEND_REBUILD_PLAN.md` for the new plan. This file remains as the
+> historical record of how `backend-v1` evolved — still accurate for that
+> codebase, just not the current direction.
+
 Status: Phase 1 (admin actor + role handling) and the admin stats API
 implemented. Phase 2 (migrating existing per-user Sheets CRUD to lsdb) is
 **done** — every table with real Sheets I/O now goes through lsdb:

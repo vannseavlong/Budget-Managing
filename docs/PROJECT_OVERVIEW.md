@@ -1,5 +1,13 @@
 # Project Structure Overview - Google Sheets Integration
 
+> **Status note**: the directory structure and stack details below describe an early/
+> aspirational version of this project and don't match the current code (which uses pnpm
+> workspaces, not npm; Next.js App Router, not the `src/app` layout shown here; etc.). The
+> backend is also currently being rebuilt from scratch — see
+> `docs/BACKEND_REBUILD_PLAN.md` for the actual current plan and `CLAUDE.md` for what's
+> accurate about the codebase today. Treat this file as historical context on the project's
+> original vision, not a structural reference.
+
 ## 🎯 Project Vision
 
 A privacy-first budget management application where each user's data is stored in their own Google Drive, eliminating the need for centralized databases while providing a rich, responsive user experience.

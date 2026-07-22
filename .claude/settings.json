@@ -16,7 +16,9 @@
       "Bash(git -C /Users/suntel/personal/Budget-Managing show f9e3783 -- package.json)",
       "Bash(git -C /Users/suntel/personal/Budget-Managing log --oneline -- pnpm-lock.yaml)",
       "Bash(git -C /Users/suntel/personal/Budget-Managing show f9e3783 --stat)",
-      "Bash(grep -E \"^\\\\s{2}\\\\S+:$\" docker-compose.yml)"
+      "Bash(grep -E \"^\\\\s{2}\\\\S+:$\" docker-compose.yml)",
+      "Bash(grep -rn \"fetch\\(\\\\`\\\\${\" lib hooks app components --include=\"*.ts\" --include=\"*.tsx\")",
+      "Bash(grep -rn -A3 \"await fetch\\(\\\\`\" app components --include=\"*.tsx\")"
     ]
   }
 }
