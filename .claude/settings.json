@@ -10,7 +10,12 @@
       "Bash(mkdir -p schemas/admin schemas/user)",
       "Bash(cp /tmp/probe-import.ts src/services/sheetDb/_probeImport.ts)",
       "Bash(ln -s src/services/sheetDb/schemas schemas)",
-      "Bash(echo \"exit:$?\")"
+      "Bash(echo \"exit:$?\")",
+      "Bash(python3 -c \"import json,sys; v=json.load\\(sys.stdin\\); print\\(v[-15:]\\)\")",
+      "Bash(git -C /Users/suntel/personal/Budget-Managing log --oneline -- package.json)",
+      "Bash(git -C /Users/suntel/personal/Budget-Managing show f9e3783 -- package.json)",
+      "Bash(git -C /Users/suntel/personal/Budget-Managing log --oneline -- pnpm-lock.yaml)",
+      "Bash(git -C /Users/suntel/personal/Budget-Managing show f9e3783 --stat)"
     ]
   }
 }
