@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { getAdapter } from '../../services/sheetDb/adapter';
-import { getAdminUsersTable } from '../../services/sheetDb/adminStats';
+import {
+  adminContext,
+  getAdminUsersTable,
+} from '../../services/sheetDb/adminStats';
 import {
   hashPassword,
   validatePasswordStrength,
@@ -58,7 +61,9 @@ export async function register(req: Request, res: Response): Promise<void> {
       // No actorTokens available for a fresh password signup — sheet lands
       // in the admin's Drive (accepted asymmetry, see §4.3).
       const adapter = await getAdapter();
-      actorSheetId = await adapter.createUserSheet(email, role, email, {
+      // See googleCallback.ts: createUserSheet's internal admin.users write
+      // needs an explicit admin context or lsdb's permission check denies it.
+      actorSheetId = await adminContext(adapter).createUserSheet(email, role, email, {
         extraFields: {
           password_hash: passwordHash,
           name,

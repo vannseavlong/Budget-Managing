@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { getGoogleOAuthManager } from '../../services/auth/googleOAuth';
 import { getAdapter } from '../../services/sheetDb/adapter';
 import {
+  adminContext,
   getAdminUsersTable,
   recordLogin,
 } from '../../services/sheetDb/adminStats';
@@ -61,7 +62,12 @@ export async function googleCallback(
 
     if (!existing) {
       const adapter = await getAdapter();
-      actorSheetId = await adapter.createUserSheet(
+      // createUserSheet's internal write to admin.users goes through
+      // table('users'), which enforces lsdb's permission check against
+      // whatever context the call runs under — calling it on the bare
+      // adapter (no context at all) always fails that check. Needs an
+      // explicit admin context, same as getAdminUsersTable() above.
+      actorSheetId = await adminContext(adapter).createUserSheet(
         profile.email,
         role,
         profile.email,

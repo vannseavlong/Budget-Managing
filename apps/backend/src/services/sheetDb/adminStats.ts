@@ -3,7 +3,7 @@ import { logger } from '../../utils/logger';
 
 export type AppRole = 'admin' | 'user';
 
-function adminContext(adapter: Awaited<ReturnType<typeof getAdapter>>) {
+export function adminContext(adapter: Awaited<ReturnType<typeof getAdapter>>) {
   return adapter.withContext({
     userId: 'system',
     actor: 'admin',
