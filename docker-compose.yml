@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Cache/Session Storage
   redis:
@@ -40,6 +38,9 @@ services:
       # and the per-user Sheets CRUD layer to function at all
       ADMIN_SHEET_ID: ${ADMIN_SHEET_ID}
       SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL}
+      # Optional — comma-separated allowlist of additional admin emails
+      # beyond SUPER_ADMIN_EMAIL (see src/utils/adminRole.ts)
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
       # Telegram — optional, notification features stay disabled without these
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}

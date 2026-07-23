@@ -22,7 +22,12 @@
       "Bash(xargs -I{} echo {})",
       "Bash(find /Users/suntel/personal/Budget-Managing/node_modules/.pnpm/longcelot-sheet-db@0.1.39_@types+node@25.9.5_pg@8.22.0/node_modules/longcelot-sheet-db -maxdepth 3 -type f -iname *.d.ts)",
       "Bash(find /Users/suntel/personal/Budget-Managing/node_modules/.pnpm/longcelot-sheet-db@0.1.39_@types+node@25.9.5_pg@8.22.0/node_modules/longcelot-sheet-db -name *.d.ts)",
-      "Bash(find /Users/suntel/personal/Budget-Managing/node_modules/.pnpm/longcelot-sheet-db@0.1.39_@types+node@25.9.5_pg@8.22.0/node_modules/longcelot-sheet-db -name *.js)"
+      "Bash(find /Users/suntel/personal/Budget-Managing/node_modules/.pnpm/longcelot-sheet-db@0.1.39_@types+node@25.9.5_pg@8.22.0/node_modules/longcelot-sheet-db -name *.js)",
+      "Bash(ADMIN_SHEET_ID=x SUPER_ADMIN_EMAIL=x GOOGLE_CLIENT_ID=x GOOGLE_CLIENT_SECRET=x GOOGLE_REDIRECT_URI=x docker compose config --quiet)",
+      "Bash(pnpm --filter ./apps/backend run validate:schema)",
+      "Bash(pip install *)",
+      "Bash(pip3 install *)",
+      "Bash(node -e ' *)"
     ]
   }
 }

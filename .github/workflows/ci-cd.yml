@@ -44,6 +44,10 @@ jobs:
       - name: Type check
         run: pnpm --filter ./apps/${{ matrix.package }} run type-check
 
+      - name: Validate lsdb schemas
+        if: matrix.package == 'backend'
+        run: pnpm --filter ./apps/backend run validate:schema
+
       - name: Run tests
         run: |
           if [ "${{ matrix.package }}" = "backend" ]; then
