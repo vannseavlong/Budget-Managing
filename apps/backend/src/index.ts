@@ -27,6 +27,20 @@ dotenv.config({
   path: path.join(__dirname, '..', '.env'),
 });
 
+// Without these, a startup-time throw is silently swallowed on hosts that
+// only capture stdout/stderr (Node prints its own trace here regardless of
+// the winston config above) — surfaced this after a Render deploy passed
+// its build but never opened a port with zero log output to explain why.
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught exception, shutting down', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled rejection, shutting down', reason);
+  process.exit(1);
+});
+
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
 
@@ -129,7 +143,7 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-app.listen(PORT, () => {
+app.listen(Number(PORT), '0.0.0.0', () => {
   logger.info(`Server is running on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
