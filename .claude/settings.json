@@ -18,7 +18,11 @@
       "Bash(git -C /Users/suntel/personal/Budget-Managing show f9e3783 --stat)",
       "Bash(grep -E \"^\\\\s{2}\\\\S+:$\" docker-compose.yml)",
       "Bash(grep -rn \"fetch\\(\\\\`\\\\${\" lib hooks app components --include=\"*.ts\" --include=\"*.tsx\")",
-      "Bash(grep -rn -A3 \"await fetch\\(\\\\`\" app components --include=\"*.tsx\")"
+      "Bash(grep -rn -A3 \"await fetch\\(\\\\`\" app components --include=\"*.tsx\")",
+      "Bash(xargs -I{} echo {})",
+      "Bash(find /Users/suntel/personal/Budget-Managing/node_modules/.pnpm/longcelot-sheet-db@0.1.39_@types+node@25.9.5_pg@8.22.0/node_modules/longcelot-sheet-db -maxdepth 3 -type f -iname *.d.ts)",
+      "Bash(find /Users/suntel/personal/Budget-Managing/node_modules/.pnpm/longcelot-sheet-db@0.1.39_@types+node@25.9.5_pg@8.22.0/node_modules/longcelot-sheet-db -name *.d.ts)",
+      "Bash(find /Users/suntel/personal/Budget-Managing/node_modules/.pnpm/longcelot-sheet-db@0.1.39_@types+node@25.9.5_pg@8.22.0/node_modules/longcelot-sheet-db -name *.js)"
     ]
   }
 }
