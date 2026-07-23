@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProtectedRoute } from '@/hooks/useProtectedRoute';
 import { DashboardHeroCard } from '@/components/common/DashboardHeroCard';
+import { DashboardSkeleton } from '@/components/common/DashboardSkeleton';
 import { DashboardStatCard } from '@/components/common/DashboardStatCard';
 import { DashboardChartCard } from '@/components/common/DashboardChartCard';
 import { SpendingPieChart } from '@/components/charts/SpendingPieChart';
@@ -57,13 +58,10 @@ export default function DashboardPage() {
     { month: 'Oct', amount: 150 },
   ];
 
-  // Show loading while checking authentication
+  // Show a layout-shaped skeleton while checking authentication instead of
+  // a blank spinner — avoids a jarring blank-then-content flash.
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div>Loading...</div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (

@@ -3,10 +3,12 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authService } from '@/lib/auth-service';
+import { useAuth } from '@/hooks/useAuth';
 
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { refreshUser } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>(
     'loading'
   );
@@ -35,23 +37,21 @@ function AuthCallbackContent() {
 
           // Handle the OAuth callback
           await authService.handleAuthCallback(code, state || undefined);
+          await refreshUser();
         } else {
           // If we have a token directly (from backend redirect), store it
           authService.setToken(decodeURIComponent(token));
 
-          // Get user info to update auth state
-          const user = await authService.getCurrentUser();
+          // Populate the shared auth context so the dashboard doesn't need
+          // its own separate profile fetch right after this one.
+          const user = await refreshUser();
           if (!user) {
             throw new Error('Failed to get user information');
           }
         }
 
         setStatus('success');
-
-        // Redirect to dashboard after successful authentication
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 2000);
+        router.push('/dashboard');
       } catch (error) {
         console.error('Auth callback error:', error);
         setStatus('error');
@@ -67,6 +67,7 @@ function AuthCallbackContent() {
     };
 
     handleCallback();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, searchParams]);
 
   return (
