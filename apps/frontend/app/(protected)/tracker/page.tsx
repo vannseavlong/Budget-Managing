@@ -1,7 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useCategories } from '@/hooks/useCategories';
+import { useTransactions } from '@/hooks/useTransactions';
+import { startOfPeriod, sumSince } from '@/lib/transaction-stats';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,13 +18,13 @@ import {
   ChevronDown,
   Plus,
   TrendingUp,
-  TrendingDown,
   DollarSign,
 } from 'lucide-react';
 import { TransactionTable } from '@/components/common/TransactionTable';
 import { EditTransactionDialog } from '@/components/common/EditTransactionDialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
-interface Transaction {
+interface UiTransaction {
   id: string;
   itemName: string;
   amount: number;
@@ -30,133 +33,104 @@ interface Transaction {
   time: string;
 }
 
-const sampleTransactions: Transaction[] = [
-  {
-    id: '1',
-    itemName: 'Morning Coffee',
-    amount: 4.5,
-    category: 'Food & Drink',
-    date: '2024-01-15',
-    time: '08:30 AM',
-  },
-  {
-    id: '2',
-    itemName: 'Gas Station',
-    amount: 45.0,
-    category: 'Transportation',
-    date: '2024-01-15',
-    time: '07:15 AM',
-  },
-  {
-    id: '3',
-    itemName: 'Lunch at Subway',
-    amount: 12.99,
-    category: 'Food & Drink',
-    date: '2024-01-15',
-    time: '12:30 PM',
-  },
-  {
-    id: '4',
-    itemName: 'Grocery Shopping',
-    amount: 67.89,
-    category: 'Shopping',
-    date: '2024-01-14',
-    time: '06:45 PM',
-  },
-  {
-    id: '5',
-    itemName: 'Movie Tickets',
-    amount: 24.0,
-    category: 'Entertainment',
-    date: '2024-01-14',
-    time: '07:30 PM',
-  },
-  {
-    id: '6',
-    itemName: 'Uber Ride',
-    amount: 18.75,
-    category: 'Transportation',
-    date: '2024-01-13',
-    time: '09:15 PM',
-  },
-  {
-    id: '7',
-    itemName: 'Dinner',
-    amount: 32.5,
-    category: 'Food & Drink',
-    date: '2024-01-13',
-    time: '07:00 PM',
-  },
-  {
-    id: '8',
-    itemName: 'Electric Bill',
-    amount: 89.99,
-    category: 'Bills & Utilities',
-    date: '2024-01-12',
-    time: '10:00 AM',
-  },
-];
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? iso : d.toISOString().slice(0, 10);
+}
+
+function formatTime(iso: string, fallback?: string): string {
+  if (fallback) return fallback;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
 
 export default function TrackerPage() {
   const { user } = useAuth();
-  const [transactions, setTransactions] =
-    useState<Transaction[]>(sampleTransactions);
+  const { categories: apiCategories, loading: categoriesLoading } =
+    useCategories();
+  const {
+    transactions: apiTransactions,
+    loading: transactionsLoading,
+    error,
+    createTransaction,
+    updateTransaction,
+    deleteTransaction,
+  } = useTransactions();
+
   const [itemName, setItemName] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Select Category');
   const [editingTransaction, setEditingTransaction] =
-    useState<Transaction | null>(null);
+    useState<UiTransaction | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const categories = [
-    'Food & Drink',
-    'Transportation',
-    'Shopping',
-    'Entertainment',
-    'Bills & Utilities',
-    'Healthcare',
-  ];
-
-  // Calculate totals
-  const today = '2024-01-15';
-  const todayTransactions = transactions.filter((t) => t.date === today);
-  const todayTotal = todayTransactions.reduce((sum, t) => sum + t.amount, 0);
-
-  const thisWeekTransactions = transactions.filter((t) => {
-    const transactionDate = new Date(t.date);
-    const currentDate = new Date(today);
-    const weekStart = new Date(currentDate);
-    weekStart.setDate(currentDate.getDate() - currentDate.getDay());
-    return transactionDate >= weekStart;
-  });
-  const thisWeekTotal = thisWeekTransactions.reduce(
-    (sum, t) => sum + t.amount,
-    0
+  const categoryNames = useMemo(
+    () => apiCategories.map((c) => c.name),
+    [apiCategories]
   );
 
-  const allTimeTotal = transactions.reduce((sum, t) => sum + t.amount, 0);
+  const categoryIdByName = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of apiCategories) map.set(c.name, c.id);
+    return map;
+  }, [apiCategories]);
 
-  const handleAddTransaction = () => {
-    if (itemName.trim() && amount && category !== 'Select Category') {
-      const newTransaction: Transaction = {
-        id: Date.now().toString(),
-        itemName: itemName.trim(),
+  const transactions = useMemo<UiTransaction[]>(
+    () =>
+      apiTransactions.map((t) => ({
+        id: t.id,
+        itemName: t.name,
+        amount: t.amount,
+        category: t.category_name || 'Uncategorized',
+        date: formatDate(t.date),
+        time: formatTime(t.date, t.time),
+      })),
+    [apiTransactions]
+  );
+
+  const todayTotal = sumSince(apiTransactions, startOfPeriod('daily', new Date()));
+  const todayCount = apiTransactions.filter(
+    (t) => new Date(t.date) >= startOfPeriod('daily', new Date())
+  ).length;
+
+  const thisWeekTotal = sumSince(
+    apiTransactions,
+    startOfPeriod('weekly', new Date())
+  );
+  const thisWeekCount = apiTransactions.filter(
+    (t) => new Date(t.date) >= startOfPeriod('weekly', new Date())
+  ).length;
+
+  const allTimeTotal = apiTransactions.reduce((sum, t) => sum + t.amount, 0);
+
+  const handleAddTransaction = async () => {
+    if (!itemName.trim() || !amount || category === 'Select Category') return;
+
+    const categoryId = categoryIdByName.get(category);
+    if (!categoryId) return;
+
+    setIsSubmitting(true);
+    try {
+      await createTransaction({
+        name: itemName.trim(),
         amount: parseFloat(amount),
-        category,
-        date: today,
-        time: new Date().toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true,
-        }),
-      };
-
-      setTransactions([newTransaction, ...transactions]);
-
-      // Reset form
+        category_id: categoryId,
+        category_name: category,
+        date: new Date().toISOString(),
+      });
       setItemName('');
       setAmount('');
       setCategory('Select Category');
+    } catch (err) {
+      console.error('Failed to add transaction:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -168,24 +142,37 @@ export default function TrackerPage() {
     }
   };
 
-  const handleDeleteTransaction = (id: string) => {
-    setTransactions(transactions.filter((t) => t.id !== id));
+  const handleDeleteTransaction = async (id: string) => {
+    try {
+      await deleteTransaction(id);
+    } catch (err) {
+      console.error('Failed to delete transaction:', err);
+    }
   };
 
-  const handleSaveTransaction = (
+  const handleSaveTransaction = async (
     id: string,
-    itemName: string,
-    amount: number,
-    category: string
+    newItemName: string,
+    newAmount: number,
+    newCategory: string
   ) => {
-    setTransactions(
-      transactions.map((t) =>
-        t.id === id ? { ...t, itemName, amount, category } : t
-      )
-    );
-    setIsEditDialogOpen(false);
-    setEditingTransaction(null);
+    const categoryId = categoryIdByName.get(newCategory);
+    try {
+      await updateTransaction(id, {
+        name: newItemName,
+        amount: newAmount,
+        category_id: categoryId,
+        category_name: newCategory,
+      });
+    } catch (err) {
+      console.error('Failed to update transaction:', err);
+    } finally {
+      setIsEditDialogOpen(false);
+      setEditingTransaction(null);
+    }
   };
+
+  const loading = transactionsLoading || categoriesLoading;
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -201,75 +188,73 @@ export default function TrackerPage() {
         </div>
       </div>
 
+      {error && (
+        <div className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="relative overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Today&apos;s Total
-            </CardTitle>
-            <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
-              <DollarSign className="h-4 w-4 text-blue-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${todayTotal.toFixed(2)}</div>
-            <div className="flex items-center space-x-1 text-xs">
-              <TrendingUp className="h-3 w-3 text-green-500" />
-              <span className="text-green-500">+$4.50</span>
-              <span className="text-muted-foreground">from yesterday</span>
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {todayTransactions.length} transaction
-              {todayTransactions.length !== 1 ? 's' : ''} today
-            </div>
-          </CardContent>
-        </Card>
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Skeleton className="h-32 rounded-xl" />
+          <Skeleton className="h-32 rounded-xl" />
+          <Skeleton className="h-32 rounded-xl" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="relative overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Today&apos;s Total
+              </CardTitle>
+              <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <DollarSign className="h-4 w-4 text-blue-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${todayTotal.toFixed(2)}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {todayCount} transaction{todayCount !== 1 ? 's' : ''} today
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="relative overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Week</CardTitle>
-            <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${thisWeekTotal.toFixed(2)}
-            </div>
-            <div className="flex items-center space-x-1 text-xs">
-              <TrendingDown className="h-3 w-3 text-red-500" />
-              <span className="text-red-500">-$12.30</span>
-              <span className="text-muted-foreground">from last week</span>
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {thisWeekTransactions.length} transaction
-              {thisWeekTransactions.length !== 1 ? 's' : ''} this week
-            </div>
-          </CardContent>
-        </Card>
+          <Card className="relative overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">This Week</CardTitle>
+              <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
+                <TrendingUp className="h-4 w-4 text-green-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                ${thisWeekTotal.toFixed(2)}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {thisWeekCount} transaction{thisWeekCount !== 1 ? 's' : ''} this
+                week
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="relative overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">All Time</CardTitle>
-            <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
-              <DollarSign className="h-4 w-4 text-purple-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${allTimeTotal.toFixed(2)}</div>
-            <div className="flex items-center space-x-1 text-xs">
-              <span className="text-muted-foreground">
-                Total expenses tracked
-              </span>
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {transactions.length} total transaction
-              {transactions.length !== 1 ? 's' : ''}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="relative overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">All Time</CardTitle>
+              <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
+                <DollarSign className="h-4 w-4 text-purple-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${allTimeTotal.toFixed(2)}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {apiTransactions.length} total transaction
+                {apiTransactions.length !== 1 ? 's' : ''}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Add New Transaction Form */}
       <Card>
@@ -322,14 +307,20 @@ export default function TrackerPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-full">
-                  {categories.map((cat) => (
-                    <DropdownMenuItem
-                      key={cat}
-                      onClick={() => setCategory(cat)}
-                    >
-                      {cat}
+                  {categoryNames.length === 0 ? (
+                    <DropdownMenuItem disabled>
+                      No categories yet — add one first
                     </DropdownMenuItem>
-                  ))}
+                  ) : (
+                    categoryNames.map((cat) => (
+                      <DropdownMenuItem
+                        key={cat}
+                        onClick={() => setCategory(cat)}
+                      >
+                        {cat}
+                      </DropdownMenuItem>
+                    ))
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -338,7 +329,10 @@ export default function TrackerPage() {
                 onClick={handleAddTransaction}
                 className="w-full"
                 disabled={
-                  !itemName.trim() || !amount || category === 'Select Category'
+                  isSubmitting ||
+                  !itemName.trim() ||
+                  !amount ||
+                  category === 'Select Category'
                 }
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -359,7 +353,7 @@ export default function TrackerPage() {
             transactions={transactions}
             onEdit={handleEditTransaction}
             onDelete={handleDeleteTransaction}
-            categories={categories}
+            categories={categoryNames}
             pageSize={10}
             searchable={true}
             filterable={true}
@@ -376,7 +370,7 @@ export default function TrackerPage() {
           if (!open) setEditingTransaction(null);
         }}
         onSave={handleSaveTransaction}
-        categories={categories}
+        categories={categoryNames}
       />
     </div>
   );

@@ -1,8 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProtectedRoute } from '@/hooks/useProtectedRoute';
+import { useTransactions } from '@/hooks/useTransactions';
+import {
+  transactionsInMonth,
+  totalAmount,
+  categoryBreakdown,
+  monthlyTrend,
+  monthOptions,
+} from '@/lib/transaction-stats';
+import BudgetsService from '@/lib/budgets-service';
 import { DashboardHeroCard } from '@/components/common/DashboardHeroCard';
 import { DashboardSkeleton } from '@/components/common/DashboardSkeleton';
 import { DashboardStatCard } from '@/components/common/DashboardStatCard';
@@ -18,49 +27,67 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 
+const CATEGORY_COLORS = [
+  '#1f2937',
+  '#6b7280',
+  '#9ca3af',
+  '#d1d5db',
+  '#e5e7eb',
+];
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const { isLoading } = useProtectedRoute();
+  const { transactions, loading: transactionsLoading } = useTransactions();
 
-  // Month selection state
-  const months = [
-    { value: '2025-01', label: 'January 2025' },
-    { value: '2025-02', label: 'February 2025' },
-    { value: '2025-03', label: 'March 2025' },
-    { value: '2025-04', label: 'April 2025' },
-    { value: '2025-05', label: 'May 2025' },
-    { value: '2025-06', label: 'June 2025' },
-    { value: '2025-07', label: 'July 2025' },
-    { value: '2025-08', label: 'August 2025' },
-    { value: '2025-09', label: 'September 2025' },
-    { value: '2025-10', label: 'October 2025' },
-    { value: '2025-11', label: 'November 2025' },
-    { value: '2025-12', label: 'December 2025' },
-  ];
+  const options = useMemo(() => monthOptions(12), []);
+  const [selected, setSelected] = useState(options[0]);
+  const [incomeSum, setIncomeSum] = useState<number | null>(null);
 
-  const [selectedMonth, setSelectedMonth] = useState('2025-10'); // Default to October 2025
-  const currentMonthLabel =
-    months.find((month) => month.value === selectedMonth)?.label ||
-    'October 2025';
+  useEffect(() => {
+    let cancelled = false;
+    BudgetsService.getIncomeSum(selected.year, selected.month)
+      .then((sum) => {
+        if (!cancelled) setIncomeSum(sum);
+      })
+      .catch(() => {
+        if (!cancelled) setIncomeSum(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selected.year, selected.month]);
 
-  // Sample data for charts
-  const spendingData = [
-    { name: 'Food & Dining', value: 847, percentage: 51, color: '#1f2937' },
-    { name: 'Transportation', value: 381, percentage: 23, color: '#6b7280' },
-    { name: 'Entertainment', value: 265, percentage: 16, color: '#9ca3af' },
-    { name: 'Bills & Utilities', value: 0, percentage: 0, color: '#d1d5db' },
-  ];
+  const monthTransactions = useMemo(
+    () => transactionsInMonth(transactions, selected.year, selected.month),
+    [transactions, selected]
+  );
 
-  const monthlyData = [
-    { month: 'Jul', amount: 850 },
-    { month: 'Aug', amount: 920 },
-    { month: 'Sep', amount: 780 },
-    { month: 'Oct', amount: 150 },
-  ];
+  const totalSpent = totalAmount(monthTransactions);
+  const activeDays = new Set(
+    monthTransactions.map((t) => new Date(t.date).toDateString())
+  ).size;
+  const dailyAverage = activeDays > 0 ? totalSpent / activeDays : 0;
+
+  const breakdown = categoryBreakdown(monthTransactions).slice(0, 4);
+  const spendingData = breakdown.map((entry, index) => ({
+    name: entry.name,
+    value: entry.amount,
+    percentage: Math.round(entry.percentage),
+    color: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
+  }));
+
+  const monthlyData = monthlyTrend(transactions, 4);
+
+  const hasBudget = incomeSum !== null && incomeSum > 0;
+  const remaining = hasBudget ? (incomeSum as number) - totalSpent : null;
+  const percentage = hasBudget
+    ? Math.min((totalSpent / (incomeSum as number)) * 100, 100)
+    : 0;
 
   // Show a layout-shaped skeleton while checking authentication instead of
   // a blank spinner — avoids a jarring blank-then-content flash.
-  if (isLoading) {
+  if (isLoading || transactionsLoading) {
     return <DashboardSkeleton />;
   }
 
@@ -73,33 +100,33 @@ export default function DashboardPage() {
             Hello, {user?.name || 'Demo User'} 👋
           </h1>
           <p className="text-sm text-gray-500 hidden md:block">
-            {currentMonthLabel}
+            {selected.label}
           </p>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right md:hidden">
-            <p className="text-sm text-gray-500">{currentMonthLabel}</p>
+            <p className="text-sm text-gray-500">{selected.label}</p>
           </div>
           {/* Month Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="flex items-center gap-2">
-                {currentMonthLabel}
+                {selected.label}
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              {months.map((month) => (
+              {options.map((opt) => (
                 <DropdownMenuItem
-                  key={month.value}
-                  onClick={() => setSelectedMonth(month.value)}
+                  key={`${opt.year}-${opt.month}`}
+                  onClick={() => setSelected(opt)}
                   className={`cursor-pointer ${
-                    selectedMonth === month.value
+                    selected.year === opt.year && selected.month === opt.month
                       ? 'bg-gray-100 font-medium'
                       : ''
                   }`}
                 >
-                  {month.label}
+                  {opt.label}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -110,10 +137,14 @@ export default function DashboardPage() {
       {/* Hero Card */}
       <DashboardHeroCard
         title="Monthly Budget"
-        amount="$152.3"
-        totalBudget="$1,000"
-        remaining="$847.7 remaining"
-        percentage={15}
+        amount={`$${totalSpent.toFixed(2)}`}
+        totalBudget={hasBudget ? `$${(incomeSum as number).toFixed(0)}` : 'Not set'}
+        remaining={
+          remaining !== null
+            ? `$${Math.abs(remaining).toFixed(2)} ${remaining < 0 ? 'over' : 'remaining'}`
+            : 'Set an income for this month to track this'
+        }
+        percentage={Math.round(percentage)}
         className="col-span-full"
       />
 
@@ -121,13 +152,17 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <DashboardStatCard
           title="Daily Average"
-          value="$76"
+          value={`$${dailyAverage.toFixed(0)}`}
           icon={DollarSign}
         />
-        <DashboardStatCard title="Transactions" value="5" icon={Receipt} />
+        <DashboardStatCard
+          title="Transactions"
+          value={monthTransactions.length}
+          icon={Receipt}
+        />
         <DashboardStatCard
           title="Top Category"
-          value="Food & Dining"
+          value={breakdown[0]?.name || 'None yet'}
           icon={TrendingUp}
         />
       </div>
@@ -136,7 +171,13 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Spending by Category */}
         <DashboardChartCard title="Spending by Category">
-          <SpendingPieChart data={spendingData} />
+          {spendingData.length === 0 ? (
+            <div className="h-70 md:h-80 flex items-center justify-center text-sm text-muted-foreground">
+              No spending recorded for {selected.label}.
+            </div>
+          ) : (
+            <SpendingPieChart data={spendingData} />
+          )}
         </DashboardChartCard>
 
         {/* Monthly Trend */}
