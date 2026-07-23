@@ -1,17 +1,4 @@
 services:
-  # Cache/Session Storage
-  redis:
-    image: redis:7-alpine
-    container_name: budget-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes --requirepass redispassword
-    networks:
-      - budget-network
-
   # Application Services
   backend:
     build:
@@ -24,7 +11,6 @@ services:
       PORT: 3001
       BACKEND_URL: http://localhost:3001
       FRONTEND_URL: http://localhost:3000
-      REDIS_URL: redis://:redispassword@redis:6379
       JWT_SECRET: your-super-secret-jwt-key-change-this-in-production
       JWT_EXPIRES_IN: 7d
       JWT_REFRESH_SECRET: your-super-secret-refresh-key-change-this-in-production
@@ -38,6 +24,9 @@ services:
       # and the per-user Sheets CRUD layer to function at all
       ADMIN_SHEET_ID: ${ADMIN_SHEET_ID}
       SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL}
+      # Static admin OAuth tokens for the sheet-db adapter — see
+      # apps/backend/src/services/sheetDb/adapter.ts for how to obtain them.
+      GOOGLE_ADMIN_TOKENS: ${GOOGLE_ADMIN_TOKENS}
       # Optional — comma-separated allowlist of additional admin emails
       # beyond SUPER_ADMIN_EMAIL (see src/utils/adminRole.ts)
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
@@ -47,8 +36,6 @@ services:
       TELEGRAM_WEBHOOK_URL: ${TELEGRAM_WEBHOOK_URL:-}
     ports:
       - "3001:3001"
-    depends_on:
-      - redis
     networks:
       - budget-network
     healthcheck:
@@ -105,10 +92,6 @@ services:
       - backend
     networks:
       - budget-network
-
-volumes:
-  redis_data:
-    driver: local
 
 networks:
   budget-network:

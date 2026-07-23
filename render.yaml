@@ -43,10 +43,11 @@ services:
         sync: false
       - key: SUPER_ADMIN_EMAIL
         sync: false
-      # Redis — persists the admin account's Google OAuth tokens for the
-      # sheet-db adapter (src/services/sheetDb/adapter.ts). Render's free
-      # web-service plan doesn't include a managed Redis; provision one
-      # (Render's own Key Value service, or an external free tier like
-      # Upstash) and paste its connection URL here.
-      - key: REDIS_URL
+      # The admin actor's Google OAuth tokens for the sheet-db adapter
+      # (src/services/sheetDb/adapter.ts) — static config, not captured at
+      # runtime. Run `npx lsdb doctor` once from apps/backend/ locally to
+      # complete the interactive Google login, then paste the resulting
+      # apps/backend/.lsdb-tokens.json contents here as a single-line JSON
+      # string.
+      - key: GOOGLE_ADMIN_TOKENS
         sync: false

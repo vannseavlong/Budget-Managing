@@ -1,6 +1,4 @@
 import { createSheetAdapter, type SheetAdapter } from 'longcelot-sheet-db';
-import { getRedisClient } from '../redisClient';
-import { redisTokenStore } from '../auth/tokenStore';
 import { logger } from '../../utils/logger';
 import usersSchema from './schemas/admin/users';
 import categoriesSchema from './schemas/user/categories';
@@ -13,8 +11,6 @@ import telegramConnectionsSchema from './schemas/user/telegramConnections';
 import telegramMessagesSchema from './schemas/user/telegramMessages';
 import settingsSchema from './schemas/user/settings';
 
-const ADMIN_TOKENS_REDIS_KEY = 'lsdb:admin-tokens';
-
 export interface AdminOAuthTokens {
   access_token: string;
   refresh_token: string;
@@ -23,40 +19,42 @@ export interface AdminOAuthTokens {
   expiry_date?: number;
 }
 
-export async function storeAdminTokens(
-  tokens: AdminOAuthTokens
-): Promise<void> {
-  const redis = await getRedisClient();
-  await redis.set(ADMIN_TOKENS_REDIS_KEY, JSON.stringify(tokens));
-  adapterPromise = null; // force rebuild with the new tokens next time it's requested
-  logger.info('Stored admin Google OAuth tokens for the sheet-db adapter');
-}
-
-async function loadAdminTokens(): Promise<AdminOAuthTokens | null> {
-  const redis = await getRedisClient();
-  const raw = await redis.get(ADMIN_TOKENS_REDIS_KEY);
-  return raw ? (JSON.parse(raw) as AdminOAuthTokens) : null;
+/**
+ * The admin actor needs its own long-lived Google OAuth tokens to construct
+ * the adapter (used for the central admin sheet and for createUserSheet's
+ * admin-side bookkeeping). These are static config, not something the app
+ * captures at runtime: run any lsdb CLI command once locally (e.g. `npx
+ * lsdb doctor` from apps/backend/) to complete the interactive Google OAuth
+ * login — it writes apps/backend/.lsdb-tokens.json — then copy that file's
+ * contents into GOOGLE_ADMIN_TOKENS as a single-line JSON string. Google
+ * refresh tokens don't expire on their own, so this only needs doing once
+ * (redo it only if the token is revoked).
+ */
+function loadAdminTokens(): AdminOAuthTokens | null {
+  const raw = process.env.GOOGLE_ADMIN_TOKENS;
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as AdminOAuthTokens;
+  } catch {
+    throw new Error(
+      'GOOGLE_ADMIN_TOKENS is set but is not valid JSON — it should be the ' +
+        'exact contents of apps/backend/.lsdb-tokens.json as a single line.'
+    );
+  }
 }
 
 let adapterPromise: Promise<SheetAdapter> | null = null;
 
-/**
- * The admin actor needs its own long-lived Google OAuth tokens to construct
- * the adapter (used for the central admin sheet and for createUserSheet's
- * admin-side bookkeeping). Those tokens are captured the first time the
- * SUPER_ADMIN_EMAIL account logs in through the normal OAuth callback (see
- * controllers/auth/googleCallback.ts) and cached in Redis from then on.
- */
 export async function getAdapter(): Promise<SheetAdapter> {
   if (adapterPromise) return adapterPromise;
 
   adapterPromise = (async () => {
-    const tokens = await loadAdminTokens();
+    const tokens = loadAdminTokens();
     if (!tokens) {
       throw new Error(
-        'Sheet-DB admin adapter is not bootstrapped yet: the admin account ' +
-          '(SUPER_ADMIN_EMAIL) needs to sign in once through the normal ' +
-          'Google OAuth flow before admin-dependent features work.'
+        'Sheet-DB admin adapter is not bootstrapped yet: set ' +
+          'GOOGLE_ADMIN_TOKENS (see services/sheetDb/adapter.ts for how to ' +
+          'obtain it) before admin-dependent features work.'
       );
     }
 
@@ -79,10 +77,6 @@ export async function getAdapter(): Promise<SheetAdapter> {
       // 'auto-sync': missing tabs/columns on a user's sheet get created
       // automatically instead of just logging a warning.
       onSchemaMismatch: 'auto-sync',
-      // Backs createUserSheet's actorTokens lookup and lets controllers
-      // persist a user's own Google tokens without ever putting them in
-      // the app JWT — see services/auth/tokenStore.ts.
-      tokenStore: redisTokenStore,
     });
 
     adapter.registerSchema(usersSchema);

@@ -5,8 +5,6 @@ import {
   getAdminUsersTable,
   recordLogin,
 } from '../../services/sheetDb/adminStats';
-import { storeAdminTokens } from '../../services/sheetDb/adapter';
-import { redisTokenStore } from '../../services/auth/tokenStore';
 import { signAccessToken } from '../../services/auth/jwt';
 import { isAdminEmail } from '../../utils/adminRole';
 import { authCallbackSchema } from './types';
@@ -53,12 +51,6 @@ export async function googleCallback(
       throw new Error('Google account email is not verified');
     }
 
-    // Best-effort: lets createUserSheet fall back to this later if needed,
-    // and keeps a copy server-side per §4.5 (never in the app JWT).
-    redisTokenStore.set(profile.email, tokens).catch((error) => {
-      logger.error('Failed to persist Google tokens for user:', error);
-    });
-
     const usersTable = await getAdminUsersTable();
     const existing = await usersTable.findOne({
       where: { email: profile.email },
@@ -93,14 +85,6 @@ export async function googleCallback(
         });
       }
       await recordLogin(profile.email);
-    }
-
-    if (profile.email === process.env.SUPER_ADMIN_EMAIL) {
-      // Bootstraps/refreshes the one Google identity the sheet-db adapter
-      // itself runs as — distinct from the app-level `role` above.
-      storeAdminTokens(tokens as any).catch((error) => {
-        logger.error('Failed to store admin sheet-db tokens:', error);
-      });
     }
 
     // Only the access token travels in the redirect URL — same as
